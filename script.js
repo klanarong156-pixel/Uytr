@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
             on: $("schedOn").value || "00:00",
             off: $("schedOff").value || "00:00"
         };
-        if (!mqttClient || !mqttClient.connected()) {
+        if (!mqttClient || !mqttClient.connected) {
             showToast("ยังไม่ได้เชื่อมต่อ MQTT", "error");
             return;
         }
@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.deleteSchedule = () => {
-        if (!mqttClient || !mqttClient.connected()) {
+        if (!mqttClient || !mqttClient.connected) {
             showToast("ยังไม่ได้เชื่อมต่อ MQTT", "error");
             return;
         }
@@ -184,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ==================== ALL RELAYS ====================
     window.allRelays = (state) => {
-        if (!mqttClient || !mqttClient.connected()) {
+        if (!mqttClient || !mqttClient.connected) {
             showToast("ยังไม่ได้เชื่อมต่อ MQTT", "error");
             return;
         }
@@ -318,7 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==================== RELAY TOGGLES ====================
     RELAYS.forEach(relay => {
         $(`${relay}Toggle`).addEventListener("change", (e) => {
-            if (!mqttClient || !mqttClient.connected()) {
+            if (!mqttClient || !mqttClient.connected) {
                 showToast("ยังไม่ได้เชื่อมต่อ MQTT", "error");
                 e.target.checked = !e.target.checked;
                 return;
@@ -333,7 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ==================== MODE BUTTONS ====================
     $("manualModeBtn").addEventListener("click", () => {
-        if (!mqttClient || !mqttClient.connected()) {
+        if (!mqttClient || !mqttClient.connected) {
             showToast("ยังไม่ได้เชื่อมต่อ MQTT", "error");
             return;
         }
@@ -343,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     $("autoModeBtn").addEventListener("click", () => {
-        if (!mqttClient || !mqttClient.connected()) {
+        if (!mqttClient || !mqttClient.connected) {
             showToast("ยังไม่ได้เชื่อมต่อ MQTT", "error");
             return;
         }
