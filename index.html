@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Farm Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <img src="/logo.png" alt="Smart Farm Logo" class="logo">
+            </div>
+            <h1>Smart Farm Dashboard</h1>
+            <p class="subtitle">สวนลุงนะ - ปลูกด้วยใจ ใส่ใจคุณภาพ</p>
+        </header>
+        <main>
+            <section class="status-section">
+                <h2>สถานะระบบ</h2>
+                <p>สถานะ ESP8266: <span id="espStatus">Offline</span></p>
+                <p>อุณหภูมิ: <span id="temperature">--</span> °C</p>
+                <p>ความชื้น: <span id="humidity">--</span> %</p>
+                <p>เวลาปัจจุบัน: <span id="currentTime">--:--:--</span></p>
+                <p>สถานะ MQTT: <span id="mqttStatus">Disconnected</span></p>
+            </section>
+
+            <section class="control-section">
+                <h2>ควบคุมรีเลย์</h2>
+                <div class="relay-control">
+                    <label>ปั๊มน้ำ:</label>
+                    <button id="pumpToggle" data-relay="pump">ปิด</button>
+                </div>
+                <div class="relay-control">
+                    <label>โซน 1:</label>
+                    <button id="zone1Toggle" data-relay="zone1">ปิด</button>
+                </div>
+                <div class="relay-control">
+                    <label>ไฟบ้าน:</label>
+                    <button id="lightHomeToggle" data-relay="lightHome">ปิด</button>
+                </div>
+                <div class="relay-control">
+                    <label>ไฟศาลา:</label>
+                    <button id="lightSalaToggle" data-relay="lightSala">ปิด</button>
+                </div>
+            </section>
+
+            <section class="mode-section">
+                <h2>โหมดการทำงาน</h2>
+                <button id="manualModeBtn">Manual</button>
+                <button id="autoModeBtn">Auto</button>
+                <p>โหมดปัจจุบัน: <span id="currentMode">Manual</span></p>
+            </section>
+
+            <section class="schedule-section">
+                <h2>ตั้งเวลา (Auto Mode)</h2>
+                <div class="schedule-item">
+                    <div class="schedule-info">
+                        <strong>ปั๊มน้ำ:</strong> 
+                        เปิด <input type="time" id="pumpOnInput"> 
+                        ปิด <input type="time" id="pumpOffInput">
+                    </div>
+                    <div class="schedule-action">
+                        <input type="checkbox" id="pumpScheduleEnable"> เปิดใช้งาน
+                    </div>
+                </div>
+                <div class="schedule-item">
+                    <div class="schedule-info">
+                        <strong>โซน 1:</strong> 
+                        เปิด <input type="time" id="zone1OnInput"> 
+                        ปิด <input type="time" id="zone1OffInput">
+                    </div>
+                    <div class="schedule-action">
+                        <input type="checkbox" id="zone1ScheduleEnable"> เปิดใช้งาน
+                    </div>
+                </div>
+                <div class="schedule-item">
+                    <div class="schedule-info">
+                        <strong>ไฟบ้าน:</strong> 
+                        เปิด <input type="time" id="lightHomeOnInput"> 
+                        ปิด <input type="time" id="lightHomeOffInput">
+                    </div>
+                    <div class="schedule-action">
+                        <input type="checkbox" id="lightHomeScheduleEnable"> เปิดใช้งาน
+                    </div>
+                </div>
+                <div class="schedule-item">
+                    <div class="schedule-info">
+                        <strong>ไฟศาลา:</strong> 
+                        เปิด <input type="time" id="lightSalaOnInput"> 
+                        ปิด <input type="time" id="lightSalaOffInput">
+                    </div>
+                    <div class="schedule-action">
+                        <input type="checkbox" id="lightSalaScheduleEnable"> เปิดใช้งาน
+                    </div>
+                </div>
+                <button id="saveSchedulesBtn" class="save-btn">บันทึกการตั้งค่า</button>
+            </section>
+        </main>
+    </div>
+    <script src="/script.js"></script>
+</body>
+</html>
