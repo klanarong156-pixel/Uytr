@@ -7,28 +7,22 @@
 #include <ArduinoOTA.h>
 #include <LittleFS.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <Wire.h>
 #include <RTClib.h>
+#include <WiFiManager.h>
 
-// ==================== WiFi & MQTT Config ====================
-const char* ssid = "Klarong-2.5G";
-const char* password = "kla56435";
+// ==================== MQTT Config ====================
 const char* mqtt_server = "650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud";
 const int mqtt_port = 8883;
 const char* mqtt_user = "smartfarm";
 const char* mqtt_pass = "Kla12345";
-const char* mqtt_client_id = "ESP8266SmartFarm_Uytr";
-
-// ==================== Telegram Config ====================
-#define BOT_TOKEN "8667185180:AAEaPMQFRUW7AhqgSFdMgMdzzZTAY4OIbjw"
-#define CHAT_ID "8698930095"
+const char* mqtt_client_id = "SmartFarm_Uytr_V4"; // เปลี่ยน ID ทุกครั้งที่แก้โค้ดเพื่อเลี่ยงค้างใน Server
 
 // ==================== Hardware Pins ====================
-#define DHTPIN D2
+#define DHTPIN D3          
 #define DHTTYPE DHT11
-#define RELAY_PUMP D1
+#define RELAY_PUMP D0      
 #define RELAY_ZONE1 D5
 #define RELAY_LIGHT_HOME D6
 #define RELAY_LIGHT_SALA D7
@@ -61,289 +55,13 @@ unsigned long lastSensorRead = 0;
 unsigned long lastStatusUpdate = 0;
 unsigned long lastRTCsync = 0;
 const long sensorInterval = 30000;
-const long statusInterval = 10000; // More frequent status updates for "Realtime" feel
-const long rtcSyncInterval = 3600000; // Sync RTC with NTP every hour
+const long statusInterval = 2000; 
+const long rtcSyncInterval = 3600000; 
 
-// ==================== Function Prototypes ====================
-void setup_wifi();
-void reconnect_mqtt();
-void callback(char* topic, byte* payload, unsigned int length);
-void setup_ota();
-void sendTelegramMessage(String message);
-void saveConfig();
-void loadConfig();
-void publishSensorData();
-void publishRelayStatus();
-void publishSettings();
-void handleScheduledTasks();
-bool parseTime(const String& timeStr, int& hour, int& minute);
-
-// ==================== Core Functions ====================
-
-void setup() {
-  Serial.begin(115200);
-  Serial.println(F("\n--- Smart Farm Uytr Booting ---"));
-
-  // Initialize LittleFS
-  if (!LittleFS.begin()) {
-    Serial.println("LittleFS Mount Failed");
-  } else {
-    loadConfig();
-  }
-
-  // Initialize Hardware
-  pinMode(RELAY_PUMP, OUTPUT);
-  pinMode(RELAY_ZONE1, OUTPUT);
-  pinMode(RELAY_LIGHT_HOME, OUTPUT);
-  pinMode(RELAY_LIGHT_SALA, OUTPUT);
-  
-  // Default OFF (Relays are usually Active LOW)
-  digitalWrite(RELAY_PUMP, HIGH);
-  digitalWrite(RELAY_ZONE1, HIGH);
-  digitalWrite(RELAY_LIGHT_HOME, HIGH);
-  digitalWrite(RELAY_LIGHT_SALA, HIGH);
-
-  dht.begin();
-  Wire.begin(D2, D1); // I2C for RTC (Using D2, D1 as in V9)
-  
-  if (!rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-  }
-
-  setup_wifi();
-  
-  espClient.setInsecure();
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
-  
-  timeClient.begin();
-  setup_ota();
-
-  // Web Server Routes
-  server.on("/", HTTP_GET, []() {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    File file = LittleFS.open("/index.html", "r");
-    if (file) {
-      server.streamFile(file, "text/html");
-      file.close();
-    }
-  });
-  server.on("/style.css", HTTP_GET, []() {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    File file = LittleFS.open("/style.css", "r");
-    if (file) {
-      server.streamFile(file, "text/css");
-      file.close();
-    }
-  });
-  server.on("/script.js", HTTP_GET, []() {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    File file = LittleFS.open("/script.js", "r");
-    if (file) {
-      server.streamFile(file, "application/javascript");
-      file.close();
-    }
-  });
-  server.begin();
-
-  Serial.println("System Ready.");
-}
-
-void loop() {
-  if (WiFi.status() != WL_CONNECTED) {
-    setup_wifi();
-  }
-
-  if (!client.connected()) {
-    reconnect_mqtt();
-  }
-  client.loop();
-  ArduinoOTA.handle();
-  server.handleClient();
-
-  unsigned long now = millis();
-
-  // Periodic Sensor Reading
-  if (now - lastSensorRead > sensorInterval) {
-    lastSensorRead = now;
-    publishSensorData();
-  }
-
-  // Periodic Status Update (Realtime time and relay status)
-  if (now - lastStatusUpdate > statusInterval) {
-    lastStatusUpdate = now;
-    DateTime rtcNow = rtc.now();
-    char timeStr[20];
-    sprintf(timeStr, "%02d:%02d:%02d", rtcNow.hour(), rtcNow.minute(), rtcNow.second());
-    client.publish("smartfarm/time", timeStr);
-    publishRelayStatus();
-  }
-
-  // Periodic RTC Sync with NTP
-  if (now - lastRTCsync > rtcSyncInterval || lastRTCsync == 0) {
-    if (timeClient.update()) {
-      DateTime ntpTime(2026, 1, 1, timeClient.getHours(), timeClient.getMinutes(), timeClient.getSeconds()); // Dummy date, we care about time
-      rtc.adjust(ntpTime);
-      lastRTCsync = now;
-      Serial.println("RTC Synced with NTP");
-    }
-  }
-
-  handleScheduledTasks();
-}
-
-// ==================== MQTT & Communication ====================
-
-void setup_wifi() {
-  if (WiFi.status() == WL_CONNECTED) return;
-  
-  Serial.print("Connecting to WiFi: ");
-  Serial.println(ssid);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  int counter = 0;
-  while (WiFi.status() != WL_CONNECTED && counter < 20) {
-    delay(500);
-    Serial.print(".");
-    counter++;
-  }
-  
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi Connected. IP: " + WiFi.localIP().toString());
-  }
-}
-
-void reconnect_mqtt() {
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Last Will and Testament for Online status
-    if (client.connect(mqtt_client_id, mqtt_user, mqtt_pass, "smartfarm/status/online", 0, true, "false")) {
-      Serial.println("connected");
-      client.publish("smartfarm/status/online", "true", true);
-      
-      // Subscribe to all control topics
-      client.subscribe("smartfarm/relay/+/set");
-      client.subscribe("smartfarm/mode/set");
-      client.subscribe("smartfarm/schedule/+/set");
-      
-      publishSettings();
-      sendTelegramMessage("Smart Farm Online 📡");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
-    }
-  }
-}
-
-void callback(char* topic, byte* payload, unsigned int length) {
-  String message = "";
-  for (int i = 0; i < length; i++) message += (char)payload[i];
-  String topicStr = String(topic);
-
-  Serial.println("Message arrived [" + topicStr + "] " + message);
-
-  // Relay Control
-  if (topicStr.startsWith("smartfarm/relay/")) {
-    String relayName = topicStr.substring(16, topicStr.lastIndexOf("/"));
-    int pin = -1;
-    String statusTopic = "";
-
-    if (relayName == "pump") { pin = RELAY_PUMP; statusTopic = "smartfarm/relay/pump/status"; }
-    else if (relayName == "zone1") { pin = RELAY_ZONE1; statusTopic = "smartfarm/relay/zone1/status"; }
-    else if (relayName == "lighthome") { pin = RELAY_LIGHT_HOME; statusTopic = "smartfarm/relay/lighthome/status"; }
-    else if (relayName == "lightsala") { pin = RELAY_LIGHT_SALA; statusTopic = "smartfarm/relay/lightsala/status"; }
-
-    if (pin != -1) {
-      if (message == "ON") {
-        digitalWrite(pin, LOW);
-        client.publish(statusTopic.c_str(), "ON", true);
-      } else if (message == "OFF") {
-        digitalWrite(pin, HIGH);
-        client.publish(statusTopic.c_str(), "OFF", true);
-      }
-    }
-  }
-  // Mode Control
-  else if (topicStr == "smartfarm/mode/set") {
-    if (message == "AUTO") currentMode = AUTO;
-    else currentMode = MANUAL;
-    client.publish("smartfarm/mode/status", (currentMode == AUTO ? "AUTO" : "MANUAL"), true);
-    saveConfig();
-  }
-  // Schedule Control
-  else if (topicStr.startsWith("smartfarm/schedule/")) {
-    StaticJsonDocument<256> doc;
-    DeserializationError error = deserializeJson(doc, message);
-    if (!error) {
-      String relayName = topicStr.substring(19, topicStr.lastIndexOf("/"));
-      RelaySchedule* sched = nullptr;
-      if (relayName == "pump") sched = &pumpSchedule;
-      else if (relayName == "zone1") sched = &zone1Schedule;
-      else if (relayName == "lighthome") sched = &lightHomeSchedule;
-      else if (relayName == "lightsala") sched = &lightSalaSchedule;
-
-      if (sched) {
-        sched->enabled = doc["enabled"] | false;
-        parseTime(doc["on"].as<String>(), sched->onHour, sched->onMinute);
-        parseTime(doc["off"].as<String>(), sched->offHour, sched->offMinute);
-        saveConfig();
-        // Echo back status
-        String statusTopic = "smartfarm/schedule/" + relayName + "/status";
-        client.publish(statusTopic.c_str(), message.c_str(), true);
-      }
-    }
-  }
-}
-
-// ==================== Logic & Helpers ====================
-
-void handleScheduledTasks() {
-  if (currentMode != AUTO) return;
-
-  DateTime now = rtc.now();
-  int h = now.hour();
-  int m = now.minute();
-
-  auto checkSched = [&](RelaySchedule& s, int pin, const char* name) {
-    if (!s.enabled) return;
-    if (h == s.onHour && m == s.onMinute) {
-      if (digitalRead(pin) == HIGH) {
-        digitalWrite(pin, LOW);
-        String t = "smartfarm/relay/"; t += name; t += "/status";
-        client.publish(t.c_str(), "ON", true);
-      }
-    } else if (h == s.offHour && m == s.offMinute) {
-      if (digitalRead(pin) == LOW) {
-        digitalWrite(pin, HIGH);
-        String t = "smartfarm/relay/"; t += name; t += "/status";
-        client.publish(t.c_str(), "OFF", true);
-      }
-    }
-  };
-
-  checkSched(pumpSchedule, RELAY_PUMP, "pump");
-  checkSched(zone1Schedule, RELAY_ZONE1, "zone1");
-  checkSched(lightHomeSchedule, RELAY_LIGHT_HOME, "lighthome");
-  checkSched(lightSalaSchedule, RELAY_LIGHT_SALA, "lightsala");
-}
-
-void publishSensorData() {
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  if (isnan(h) || isnan(t)) return;
-
-  StaticJsonDocument<128> doc;
-  doc["temperature"] = t;
-  doc["humidity"] = h;
-  char buffer[128];
-  serializeJson(doc, buffer);
-  client.publish("smartfarm/sensor/dht11", buffer);
-}
+// ==================== Functions ====================
 
 void publishRelayStatus() {
+  if (!client.connected()) return;
   client.publish("smartfarm/relay/pump/status", (digitalRead(RELAY_PUMP) == LOW ? "ON" : "OFF"), true);
   client.publish("smartfarm/relay/zone1/status", (digitalRead(RELAY_ZONE1) == LOW ? "ON" : "OFF"), true);
   client.publish("smartfarm/relay/lighthome/status", (digitalRead(RELAY_LIGHT_HOME) == LOW ? "ON" : "OFF"), true);
@@ -351,8 +69,8 @@ void publishRelayStatus() {
 }
 
 void publishSettings() {
+  if (!client.connected()) return;
   client.publish("smartfarm/mode/status", (currentMode == AUTO ? "AUTO" : "MANUAL"), true);
-  
   auto pubSched = [&](RelaySchedule& s, const char* name) {
     StaticJsonDocument<128> doc;
     doc["enabled"] = s.enabled;
@@ -366,7 +84,6 @@ void publishSettings() {
     String t = "smartfarm/schedule/"; t += name; t += "/status";
     client.publish(t.c_str(), buffer, true);
   };
-
   pubSched(pumpSchedule, "pump");
   pubSched(zone1Schedule, "zone1");
   pubSched(lightHomeSchedule, "lighthome");
@@ -374,76 +91,224 @@ void publishSettings() {
 }
 
 void saveConfig() {
-  StaticJsonDocument<1024> doc;
+  StaticJsonDocument<512> doc;
   doc["mode"] = (currentMode == AUTO ? "AUTO" : "MANUAL");
-  
   auto addSched = [&](RelaySchedule& s, const char* key) {
     JsonObject obj = doc.createNestedObject(key);
-    obj["enabled"] = s.enabled;
-    obj["onH"] = s.onHour;
-    obj["onM"] = s.onMinute;
-    obj["offH"] = s.offHour;
-    obj["offM"] = s.offMinute;
+    obj["en"] = s.enabled;
+    obj["onH"] = s.onHour; obj["onM"] = s.onMinute;
+    obj["offH"] = s.offHour; obj["offM"] = s.offMinute;
   };
-
-  addSched(pumpSchedule, "pump");
-  addSched(zone1Schedule, "zone1");
-  addSched(lightHomeSchedule, "lighthome");
-  addSched(lightSalaSchedule, "sala");
+  addSched(pumpSchedule, "p");
+  addSched(zone1Schedule, "z");
+  addSched(lightHomeSchedule, "h");
+  addSched(lightSalaSchedule, "s");
 
   File f = LittleFS.open("/config.json", "w");
-  if (f) {
-    serializeJson(doc, f);
-    f.close();
-  }
+  if (f) { serializeJson(doc, f); f.close(); }
 }
 
 void loadConfig() {
+  if (!LittleFS.exists("/config.json")) return;
   File f = LittleFS.open("/config.json", "r");
   if (!f) return;
-  StaticJsonDocument<1024> doc;
+  StaticJsonDocument<512> doc;
   if (deserializeJson(doc, f) == DeserializationError::Ok) {
     currentMode = (doc["mode"] == "AUTO" ? AUTO : MANUAL);
-    
     auto getSched = [&](RelaySchedule& s, const char* key) {
       if (doc.containsKey(key)) {
-        s.enabled = doc[key]["enabled"];
-        s.onHour = doc[key]["onH"];
-        s.onMinute = doc[key]["onM"];
-        s.offHour = doc[key]["offH"];
-        s.offMinute = doc[key]["offM"];
+        s.enabled = doc[key]["en"];
+        s.onHour = doc[key]["onH"]; s.onMinute = doc[key]["onM"];
+        s.offHour = doc[key]["offH"]; s.offMinute = doc[key]["offM"];
       }
     };
-
-    getSched(pumpSchedule, "pump");
-    getSched(zone1Schedule, "zone1");
-    getSched(lightHomeSchedule, "lighthome");
-    getSched(lightSalaSchedule, "sala");
+    getSched(pumpSchedule, "p"); getSched(zone1Schedule, "z");
+    getSched(lightHomeSchedule, "h"); getSched(lightSalaSchedule, "s");
   }
   f.close();
 }
 
-void sendTelegramMessage(String message) {
-  WiFiClientSecure tgClient;
-  tgClient.setInsecure();
-  HTTPClient http;
-  String url = "https://api.telegram.org/bot" + String(BOT_TOKEN) + "/sendMessage?chat_id=" + String(CHAT_ID) + "&text=" + message;
-  if (http.begin(tgClient, url)) {
-    http.GET();
-    http.end();
+void callback(char* topic, byte* payload, unsigned int length) {
+  String message = "";
+  for (int i = 0; i < length; i++) message += (char)payload[i];
+  String topicStr = String(topic);
+
+  Serial.println("MQTT Message: " + topicStr + " -> " + message);
+
+  if (topicStr.startsWith("smartfarm/relay/")) {
+    String relayName = topicStr.substring(16, topicStr.lastIndexOf("/"));
+    int pin = -1;
+    if (relayName == "pump") pin = RELAY_PUMP;
+    else if (relayName == "zone1") pin = RELAY_ZONE1;
+    else if (relayName == "lighthome") pin = RELAY_LIGHT_HOME;
+    else if (relayName == "lightsala") pin = RELAY_LIGHT_SALA;
+
+    if (pin != -1) {
+      digitalWrite(pin, (message == "ON" ? LOW : HIGH));
+      publishRelayStatus();
+    }
+  }
+  else if (topicStr == "smartfarm/mode/set") {
+    currentMode = (message == "AUTO" ? AUTO : MANUAL);
+    publishSettings();
+    saveConfig();
+  }
+  else if (topicStr.startsWith("smartfarm/schedule/")) {
+    String relayName = topicStr.substring(19, topicStr.lastIndexOf("/"));
+    RelaySchedule* sched = nullptr;
+    if (relayName == "pump") sched = &pumpSchedule;
+    else if (relayName == "zone1") sched = &zone1Schedule;
+    else if (relayName == "lighthome") sched = &lightHomeSchedule;
+    else if (relayName == "lightsala") sched = &lightSalaSchedule;
+
+    if (sched) {
+      if (message == "DELETE") {
+        sched->enabled = false;
+      } else {
+        StaticJsonDocument<256> doc;
+        if (deserializeJson(doc, message) == DeserializationError::Ok) {
+          sched->enabled = doc["enabled"] | false;
+          sscanf(doc["on"].as<const char*>(), "%d:%d", &sched->onHour, &sched->onMinute);
+          sscanf(doc["off"].as<const char*>(), "%d:%d", &sched->offHour, &sched->offMinute);
+        }
+      }
+      saveConfig();
+      publishSettings();
+    }
   }
 }
 
-bool parseTime(const String& timeStr, int& hour, int& minute) {
-  if (timeStr.length() < 5) return false;
-  int colonPos = timeStr.indexOf(':');
-  if (colonPos == -1) return false;
-  hour = timeStr.substring(0, colonPos).toInt();
-  minute = timeStr.substring(colonPos + 1).toInt();
-  return true;
+void reconnect_mqtt() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  
+  static unsigned long lastRetry = 0;
+  if (millis() - lastRetry < 5000) return; // ลองใหม่ทุก 5 วินาทีแบบไม่ค้าง (Non-blocking)
+  lastRetry = millis();
+
+  Serial.print("Attempting MQTT connection... ");
+  
+  // *** Memory Optimization for ESP8266 ***
+  espClient.setInsecure();
+  espClient.setBufferSizes(512, 512); // ลดขนาด Buffer เพื่อประหยัด RAM
+  
+  if (client.connect(mqtt_client_id, mqtt_user, mqtt_pass, "smartfarm/status/online", 0, true, "false")) {
+    Serial.println("CONNECTED!");
+    client.publish("smartfarm/status/online", "true", true);
+    client.subscribe("smartfarm/relay/+/set");
+    client.subscribe("smartfarm/mode/set");
+    client.subscribe("smartfarm/schedule/+/set");
+    publishSettings();
+    publishRelayStatus();
+  } else {
+    Serial.print("FAILED, rc=");
+    Serial.println(client.state());
+  }
 }
 
-void setup_ota() {
+void handleScheduledTasks() {
+  if (currentMode != AUTO) return;
+  DateTime now = rtc.now();
+  int h = now.hour();
+  int m = now.minute();
+  static int lastM = -1;
+  if (m == lastM) return; // ทำงานแค่ครั้งเดียวต่อนาที
+  lastM = m;
+
+  auto checkSched = [&](RelaySchedule& s, int pin) {
+    if (!s.enabled) return;
+    if (h == s.onHour && m == s.onMinute) digitalWrite(pin, LOW);
+    else if (h == s.offHour && m == s.offMinute) digitalWrite(pin, HIGH);
+  };
+  checkSched(pumpSchedule, RELAY_PUMP);
+  checkSched(zone1Schedule, RELAY_ZONE1);
+  checkSched(lightHomeSchedule, RELAY_LIGHT_HOME);
+  checkSched(lightSalaSchedule, RELAY_LIGHT_SALA);
+  publishRelayStatus();
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("\n\n=== SMART FARM STARTING ===");
+  
+  if (!LittleFS.begin()) Serial.println("LittleFS Error");
+  loadConfig();
+
+  pinMode(RELAY_PUMP, OUTPUT);
+  pinMode(RELAY_ZONE1, OUTPUT);
+  pinMode(RELAY_LIGHT_HOME, OUTPUT);
+  pinMode(RELAY_LIGHT_SALA, OUTPUT);
+  digitalWrite(RELAY_PUMP, HIGH);
+  digitalWrite(RELAY_ZONE1, HIGH);
+  digitalWrite(RELAY_LIGHT_HOME, HIGH);
+  digitalWrite(RELAY_LIGHT_SALA, HIGH);
+
+  dht.begin();
+  Wire.begin(D2, D1);
+  if (!rtc.begin()) Serial.println("RTC Not Found");
+
+  WiFiManager wm;
+  // wm.resetSettings(); // ปลดคอมเมนต์หากต้องการล้างค่า WiFi เดิม
+  wm.autoConnect("SmartFarm_Setup");
+
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback);
+  client.setBufferSize(512);
+  
+  timeClient.begin();
   ArduinoOTA.setHostname("SmartFarm-Uytr");
   ArduinoOTA.begin();
+  
+  server.on("/", []() { server.send(200, "text/plain", "Smart Farm OK"); });
+  server.begin();
+  
+  Serial.println("System Ready. Free Heap: " + String(ESP.getFreeHeap()));
+}
+
+void loop() {
+  if (!client.connected()) {
+    reconnect_mqtt();
+  } else {
+    client.loop();
+  }
+  
+  ArduinoOTA.handle();
+  server.handleClient();
+  
+  unsigned long now = millis();
+  
+  // ส่งเวลาและสถานะ
+  if (now - lastStatusUpdate > statusInterval) {
+    lastStatusUpdate = now;
+    if (client.connected()) {
+      DateTime rtcNow = rtc.now();
+      char buf[32];
+      sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d", rtcNow.year(), rtcNow.month(), rtcNow.day(), rtcNow.hour(), rtcNow.minute(), rtcNow.second());
+      client.publish("smartfarm/time", buf);
+    }
+  }
+
+  // อ่านเซ็นเซอร์
+  if (now - lastSensorRead > sensorInterval) {
+    lastSensorRead = now;
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();
+    if (!isnan(h) && !isnan(t) && client.connected()) {
+      StaticJsonDocument<128> doc;
+      doc["temperature"] = t; doc["humidity"] = h;
+      char buffer[128]; serializeJson(doc, buffer);
+      client.publish("smartfarm/sensor/dht11", buffer);
+    }
+  }
+
+  // ซิงค์เวลา
+  if (now - lastRTCsync > rtcSyncInterval || lastRTCsync == 0) {
+    if (WiFi.status() == WL_CONNECTED && timeClient.update()) {
+      rtc.adjust(DateTime(rtc.now().year(), rtc.now().month(), rtc.now().day(), 
+                          timeClient.getHours(), timeClient.getMinutes(), timeClient.getSeconds()));
+      lastRTCsync = now;
+      Serial.println("RTC Synced");
+    }
+  }
+
+  handleScheduledTasks();
 }
