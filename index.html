@@ -21,12 +21,9 @@
         .toggle-checkbox:checked + .toggle-label .toggle-dot {
             transform: translateX(100%);
         }
-        .status-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(48%) sepia(13%) saturate(3207%) hue-rotate(130deg) brightness(95%) contrast(80%);
+            cursor: pointer;
         }
     </style>
 </head>
@@ -56,7 +53,6 @@
     <main class="max-w-5xl mx-auto px-4 mt-6 space-y-6">
         <!-- Status Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <!-- Temperature -->
             <div class="glass-card rounded-2xl p-4 shadow-sm border-l-4 border-orange-400">
                 <div class="flex items-center justify-between mb-2">
                     <i data-lucide="thermometer" class="w-5 h-5 text-orange-500"></i>
@@ -66,9 +62,7 @@
                     <span id="temperature" class="text-3xl font-bold text-slate-700">--</span>
                     <span class="text-lg text-slate-400">°C</span>
                 </div>
-                <p class="text-xs text-slate-400 mt-2">อุณหภูมิสภาพแวดล้อม</p>
             </div>
-            <!-- Humidity -->
             <div class="glass-card rounded-2xl p-4 shadow-sm border-l-4 border-blue-400">
                 <div class="flex items-center justify-between mb-2">
                     <i data-lucide="droplets" class="w-5 h-5 text-blue-500"></i>
@@ -78,9 +72,7 @@
                     <span id="humidity" class="text-3xl font-bold text-slate-700">--</span>
                     <span class="text-lg text-slate-400">%</span>
                 </div>
-                <p class="text-xs text-slate-400 mt-2">ความชื้นสัมพัทธ์</p>
             </div>
-            <!-- ESP Status -->
             <div class="glass-card rounded-2xl p-4 shadow-sm border-l-4 border-emerald-400">
                 <div class="flex items-center justify-between mb-2">
                     <i data-lucide="cpu" class="w-5 h-5 text-emerald-500"></i>
@@ -89,9 +81,7 @@
                 <div class="flex items-center space-x-2">
                     <span id="espStatus" class="text-xl font-bold text-slate-700">Offline</span>
                 </div>
-                <p class="text-xs text-slate-400 mt-2">สถานะอุปกรณ์ ESP8266</p>
             </div>
-            <!-- Mode Status -->
             <div class="glass-card rounded-2xl p-4 shadow-sm border-l-4 border-purple-400">
                 <div class="flex items-center justify-between mb-2">
                     <i data-lucide="settings-2" class="w-5 h-5 text-purple-500"></i>
@@ -100,7 +90,6 @@
                 <div class="flex items-center space-x-2">
                     <span id="currentMode" class="text-xl font-bold text-slate-700 uppercase">Manual</span>
                 </div>
-                <p class="text-xs text-slate-400 mt-2">โหมดการทำงาน</p>
             </div>
         </div>
 
@@ -112,7 +101,7 @@
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Pump -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
+                <div class="glass-card rounded-2xl p-5 shadow-sm">
                     <div class="flex justify-between items-start mb-4">
                         <div class="p-3 rounded-xl bg-blue-50 text-blue-600">
                             <i data-lucide="waves" class="w-6 h-6"></i>
@@ -126,7 +115,7 @@
                     <p id="pumpStatusText" class="text-sm text-slate-400">ปิดการใช้งาน</p>
                 </div>
                 <!-- Zone 1 -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
+                <div class="glass-card rounded-2xl p-5 shadow-sm">
                     <div class="flex justify-between items-start mb-4">
                         <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600">
                             <i data-lucide="sprout" class="w-6 h-6"></i>
@@ -140,7 +129,7 @@
                     <p id="zone1StatusText" class="text-sm text-slate-400">ปิดการใช้งาน</p>
                 </div>
                 <!-- Light Home -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
+                <div class="glass-card rounded-2xl p-5 shadow-sm">
                     <div class="flex justify-between items-start mb-4">
                         <div class="p-3 rounded-xl bg-orange-50 text-orange-600">
                             <i data-lucide="home" class="w-6 h-6"></i>
@@ -154,7 +143,7 @@
                     <p id="lightHomeStatusText" class="text-sm text-slate-400">ปิดการใช้งาน</p>
                 </div>
                 <!-- Light Sala -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
+                <div class="glass-card rounded-2xl p-5 shadow-sm">
                     <div class="flex justify-between items-start mb-4">
                         <div class="p-3 rounded-xl bg-amber-50 text-amber-600">
                             <i data-lucide="palmtree" class="w-6 h-6"></i>
@@ -170,74 +159,142 @@
             </div>
         </section>
 
-        <!-- Mode & Schedule -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Mode Selection -->
-            <div class="glass-card rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <!-- Mode Selection -->
+        <section class="glass-card rounded-2xl p-6 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 class="text-lg font-semibold mb-2">โหมดการทำงาน</h2>
-                    <p class="text-sm text-slate-500 mb-6">เลือกโหมดการควบคุมระบบฟาร์ม</p>
+                    <h2 class="text-lg font-semibold">โหมดการทำงาน</h2>
+                    <p class="text-sm text-slate-500">เลือกโหมด Manual เพื่อคุมเอง หรือ Auto เพื่อใช้ตารางเวลา</p>
                 </div>
-                <div class="flex p-1 bg-slate-100 rounded-xl">
+                <div class="flex p-1 bg-slate-100 rounded-xl w-full md:w-64">
                     <button id="manualModeBtn" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all bg-white shadow-sm text-purple-600">Manual</button>
                     <button id="autoModeBtn" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all text-slate-500 hover:text-slate-700">Auto</button>
                 </div>
             </div>
+        </section>
 
-            <!-- Schedule Card -->
-            <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-lg font-semibold">ตั้งเวลาอัตโนมัติ</h2>
-                        <p class="text-sm text-slate-500">กำหนดเวลาเปิด-ปิดปั๊มน้ำ</p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-sm text-slate-600">เปิดใช้งาน</span>
-                        <div class="relative inline-block w-10 h-5 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" id="pumpScheduleEnable" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-slate-200 appearance-none cursor-pointer z-10 transition-transform duration-200"/>
-                            <label for="pumpScheduleEnable" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-200 cursor-pointer transition-colors duration-200"></label>
+        <!-- Schedule Section -->
+        <section>
+            <h2 class="text-lg font-semibold mb-4 flex items-center space-x-2">
+                <i data-lucide="calendar-days" class="w-5 h-5 text-emerald-500"></i>
+                <span>จัดการตารางเวลา (โหมด Auto)</span>
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Schedule Template -->
+                <div class="glass-card rounded-2xl p-6 shadow-sm border-t-4 border-blue-400" id="sched-pump">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="waves" class="w-4 h-4 text-blue-500"></i>
+                            <span>ปั๊มน้ำ</span>
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-slate-500">เปิดใช้งาน</span>
+                            <input type="checkbox" id="pumpSchedEnable" class="w-4 h-4 accent-emerald-500">
                         </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">เวลาเปิด</label>
+                            <input type="time" id="pumpOnTime" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">เวลาปิด</label>
+                            <input type="time" id="pumpOffTime" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="saveSchedule('pump')" class="flex-1 bg-emerald-600 text-white text-xs font-medium py-2 rounded-lg hover:bg-emerald-700 transition-colors">บันทึก</button>
+                        <button onclick="deleteSchedule('pump')" class="px-3 bg-rose-50 text-rose-600 text-xs font-medium py-2 rounded-lg hover:bg-rose-100 transition-colors">ลบ</button>
                     </div>
                 </div>
-                
-                <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8">
-                    <div class="w-full">
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">เวลาเปิด</label>
-                        <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                            <i data-lucide="play-circle" class="w-5 h-5 text-emerald-500"></i>
-                            <input type="time" id="pumpOnInput" class="bg-transparent border-none focus:ring-0 text-lg font-medium text-slate-700 w-full">
+
+                <div class="glass-card rounded-2xl p-6 shadow-sm border-t-4 border-emerald-400" id="sched-zone1">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="sprout" class="w-4 h-4 text-emerald-500"></i>
+                            <span>โซน 1</span>
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-slate-500">เปิดใช้งาน</span>
+                            <input type="checkbox" id="zone1SchedEnable" class="w-4 h-4 accent-emerald-500">
                         </div>
                     </div>
-                    <div class="w-full">
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">เวลาปิด</label>
-                        <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                            <i data-lucide="stop-circle" class="w-5 h-5 text-rose-500"></i>
-                            <input type="time" id="pumpOffInput" class="bg-transparent border-none focus:ring-0 text-lg font-medium text-slate-700 w-full">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">เวลาเปิด</label>
+                            <input type="time" id="zone1OnTime" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
                         </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">เวลาปิด</label>
+                            <input type="time" id="zone1OffTime" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="saveSchedule('zone1')" class="flex-1 bg-emerald-600 text-white text-xs font-medium py-2 rounded-lg hover:bg-emerald-700 transition-colors">บันทึก</button>
+                        <button onclick="deleteSchedule('zone1')" class="px-3 bg-rose-50 text-rose-600 text-xs font-medium py-2 rounded-lg hover:bg-rose-100 transition-colors">ลบ</button>
                     </div>
                 </div>
 
-                <button id="saveSchedulesBtn" class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-emerald-100 flex items-center justify-center space-x-2">
-                    <i data-lucide="save" class="w-5 h-5"></i>
-                    <span>บันทึกการตั้งค่า</span>
-                </button>
-            </div>
-        </div>
+                <div class="glass-card rounded-2xl p-6 shadow-sm border-t-4 border-orange-400" id="sched-lighthome">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="home" class="w-4 h-4 text-orange-500"></i>
+                            <span>ไฟบ้าน</span>
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-slate-500">เปิดใช้งาน</span>
+                            <input type="checkbox" id="lighthomeSchedEnable" class="w-4 h-4 accent-emerald-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">เวลาเปิด</label>
+                            <input type="time" id="lighthomeOnTime" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">เวลาปิด</label>
+                            <input type="time" id="lighthomeOffTime" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="saveSchedule('lighthome')" class="flex-1 bg-emerald-600 text-white text-xs font-medium py-2 rounded-lg hover:bg-emerald-700 transition-colors">บันทึก</button>
+                        <button onclick="deleteSchedule('lighthome')" class="px-3 bg-rose-50 text-rose-600 text-xs font-medium py-2 rounded-lg hover:bg-rose-100 transition-colors">ลบ</button>
+                    </div>
+                </div>
 
-        <!-- Info Section -->
-        <section class="glass-card rounded-2xl p-6 shadow-sm bg-blue-50 border-l-4 border-blue-400">
-            <div class="flex items-start space-x-3">
-                <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
-                <div>
-                    <h3 class="font-semibold text-blue-900 mb-1">ข้อมูลระบบ</h3>
-                    <p class="text-sm text-blue-800">ระบบ Smart Farm ใช้ RTC (Real-Time Clock) สำหรับการจัดเวลาที่แม่นยำ เวลาจะถูกซิงค์อัตโนมัติจาก NTP Server ทุกชั่วโมง เพื่อให้การกำหนดเวลาเปิด-ปิดอุปกรณ์มีความถูกต้องสูงสุด</p>
+                <div class="glass-card rounded-2xl p-6 shadow-sm border-t-4 border-amber-400" id="sched-lightsala">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="palmtree" class="w-4 h-4 text-amber-500"></i>
+                            <span>ไฟศาลา</span>
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-slate-500">เปิดใช้งาน</span>
+                            <input type="checkbox" id="lightsalaSchedEnable" class="w-4 h-4 accent-emerald-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">เวลาเปิด</label>
+                            <input type="time" id="lightsalaOnTime" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">เวลาปิด</label>
+                            <input type="time" id="lightsalaOffTime" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="saveSchedule('lightsala')" class="flex-1 bg-emerald-600 text-white text-xs font-medium py-2 rounded-lg hover:bg-emerald-700 transition-colors">บันทึก</button>
+                        <button onclick="deleteSchedule('lightsala')" class="px-3 bg-rose-50 text-rose-600 text-xs font-medium py-2 rounded-lg hover:bg-rose-100 transition-colors">ลบ</button>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 
     <footer class="mt-12 text-center text-slate-400 text-sm">
-        <p>&copy; 2026 สวนลุงนะ Smart Farm System - Powered by RTC & MQTT</p>
+        <p>&copy; 2026 สวนลุงนะ Smart Farm System - RTC & Multi-Schedule Support</p>
     </footer>
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
