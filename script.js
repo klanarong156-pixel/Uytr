@@ -13,10 +13,10 @@ document.addEventListener("DOMContentLoaded", () => {
         online: "smartfarm/status/online",
         sensor: "smartfarm/sensor/dht11",
         time: "smartfarm/time",
+        
         modeSet: "smartfarm/mode/set",
         modeStatus: "smartfarm/mode/status",
-        mqttStatus: "smartfarm/mqtt/status",
-
+        
         pumpSet: "smartfarm/relay/pump/set",
         pumpStatus: "smartfarm/relay/pump/status",
         zone1Set: "smartfarm/relay/zone1/set",
@@ -25,13 +25,22 @@ document.addEventListener("DOMContentLoaded", () => {
         lightHomeStatus: "smartfarm/relay/lighthome/status",
         lightSalaSet: "smartfarm/relay/lightsala/set",
         lightSalaStatus: "smartfarm/relay/lightsala/status",
-
+        
         pumpScheduleSet: "smartfarm/schedule/pump/set",
-        pumpScheduleStatus: "smartfarm/schedule/pump/status"
+        pumpScheduleStatus: "smartfarm/schedule/pump/status",
+        zone1ScheduleSet: "smartfarm/schedule/zone1/set",
+        zone1ScheduleStatus: "smartfarm/schedule/zone1/status",
+        lightHomeScheduleSet: "smartfarm/schedule/lighthome/set",
+        lightHomeScheduleStatus: "smartfarm/schedule/lighthome/status",
+        lightSalaScheduleSet: "smartfarm/schedule/lightsala/set",
+        lightSalaScheduleStatus: "smartfarm/schedule/lightsala/status"
     };
 
     const $ = id => document.getElementById(id);
 
+    // ============================================================
+    // DOM Elements
+    // ============================================================
     const espStatusElement = $("espStatus");
     const temperatureElement = $("temperature");
     const humidityElement = $("humidity");
@@ -58,7 +67,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const pumpOffInput = $("pumpOffInput");
     const saveSchedulesBtn = $("saveSchedulesBtn");
 
+    // ============================================================
+    // MQTT Client
+    // ============================================================
     let mqttClient = null;
+    let deviceOnlineStatus = false;
 
     function setMqttStatus(text, status = "disconnected") {
         mqttStatusElement.textContent = text;
@@ -100,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
         switch (topic) {
             case TOPIC.online:
                 const isOnline = message.toLowerCase() === "true";
+                deviceOnlineStatus = isOnline;
                 espStatusElement.textContent = isOnline ? "Online" : "Offline";
                 espStatusElement.className = "text-xl font-bold " + (isOnline ? "text-emerald-600" : "text-rose-600");
                 break;
@@ -107,8 +121,8 @@ document.addEventListener("DOMContentLoaded", () => {
             case TOPIC.sensor:
                 try {
                     const data = JSON.parse(message);
-                    if (data.temperature !== undefined) temperatureElement.textContent = data.temperature;
-                    if (data.humidity !== undefined) humidityElement.textContent = data.humidity;
+                    if (data.temperature !== undefined) temperatureElement.textContent = data.temperature.toFixed(1);
+                    if (data.humidity !== undefined) humidityElement.textContent = data.humidity.toFixed(1);
                 } catch (e) {
                     console.error("DHT11 JSON error:", e, message);
                 }
@@ -153,10 +167,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function publish(topic, message) {
         if (!mqttClient || !mqttClient.connected) {
-            console.warn("MQTT not connected");
+            console.warn("MQTT not connected, cannot publish to " + topic);
             return false;
         }
-        mqttClient.publish(topic, String(message), { qos: 0, retain: false });
+        mqttClient.publish(topic, String(message), { qos: 1, retain: false });
         return true;
     }
 
@@ -174,15 +188,36 @@ document.addEventListener("DOMContentLoaded", () => {
             connectTimeout: 10000,
             reconnectPeriod: 5000,
             username: MQTT_CONFIG.username,
-            password: MQTT_CONFIG.password
+            password: MQTT_CONFIG.password,
+            will: {
+                topic: TOPIC.online,
+                payload: "false",
+                qos: 0,
+                retain: true
+            }
         };
 
         mqttClient = mqtt.connect(MQTT_CONFIG.url, options);
 
         mqttClient.on("connect", () => {
             setMqttStatus("Connected", "connected");
-            mqttClient.subscribe(Object.values(TOPIC), { qos: 0 });
-            publish(TOPIC.mqttStatus, "Web Dashboard Connected");
+            // Subscribe to all status topics
+            const topics = [
+                TOPIC.online,
+                TOPIC.sensor,
+                TOPIC.time,
+                TOPIC.modeStatus,
+                TOPIC.pumpStatus,
+                TOPIC.zone1Status,
+                TOPIC.lightHomeStatus,
+                TOPIC.lightSalaStatus,
+                TOPIC.pumpScheduleStatus,
+                TOPIC.zone1ScheduleStatus,
+                TOPIC.lightHomeScheduleStatus,
+                TOPIC.lightSalaScheduleStatus
+            ];
+            mqttClient.subscribe(topics, { qos: 1 });
+            console.log("Subscribed to all topics");
         });
 
         mqttClient.on("message", (topic, payload) => {
@@ -198,10 +233,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ============================================================
     // Event Listeners
+    // ============================================================
+    
     const handleToggle = (checkbox, topic) => {
         const nextState = checkbox.checked ? "ON" : "OFF";
-        publish(topic, nextState);
+        if (!publish(topic, nextState)) {
+            // Revert on failure
+            checkbox.checked = !checkbox.checked;
+        }
     };
 
     pumpToggle.addEventListener("change", () => handleToggle(pumpToggle, TOPIC.pumpSet));
@@ -209,8 +250,17 @@ document.addEventListener("DOMContentLoaded", () => {
     lightHomeToggle.addEventListener("change", () => handleToggle(lightHomeToggle, TOPIC.lightHomeSet));
     lightSalaToggle.addEventListener("change", () => handleToggle(lightSalaToggle, TOPIC.lightSalaSet));
 
-    manualModeBtn.addEventListener("click", () => publish(TOPIC.modeSet, "MANUAL"));
-    autoModeBtn.addEventListener("click", () => publish(TOPIC.modeSet, "AUTO"));
+    manualModeBtn.addEventListener("click", () => {
+        if (publish(TOPIC.modeSet, "MANUAL")) {
+            updateModeUI("MANUAL");
+        }
+    });
+
+    autoModeBtn.addEventListener("click", () => {
+        if (publish(TOPIC.modeSet, "AUTO")) {
+            updateModeUI("AUTO");
+        }
+    });
 
     saveSchedulesBtn.addEventListener("click", () => {
         const schedule = {
@@ -220,16 +270,22 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         if (publish(TOPIC.pumpScheduleSet, JSON.stringify(schedule))) {
             const originalText = saveSchedulesBtn.innerHTML;
+            const originalClass = saveSchedulesBtn.className;
             saveSchedulesBtn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i><span>บันทึกสำเร็จ</span>';
             saveSchedulesBtn.className = "w-full mt-6 bg-blue-600 text-white font-medium py-3 rounded-xl transition-all flex items-center justify-center space-x-2";
             lucide.createIcons();
             setTimeout(() => {
                 saveSchedulesBtn.innerHTML = originalText;
-                saveSchedulesBtn.className = "w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-emerald-100 flex items-center justify-center space-x-2";
+                saveSchedulesBtn.className = originalClass;
                 lucide.createIcons();
             }, 2000);
+        } else {
+            alert("ไม่สามารถบันทึกได้ เนื่องจาก MQTT ไม่เชื่อมต่อ");
         }
     });
 
+    // ============================================================
+    // Initialization
+    // ============================================================
     connectMQTT();
 });

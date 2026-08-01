@@ -21,6 +21,13 @@
         .toggle-checkbox:checked + .toggle-label .toggle-dot {
             transform: translateX(100%);
         }
+        .status-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 pb-12">
@@ -37,8 +44,8 @@
                 </div>
             </div>
             <div class="text-right">
-                <div id="currentTime" class="text-lg font-medium text-emerald-600 tracking-wider">--:--:--</div>
-                <div class="flex items-center justify-end space-x-1">
+                <div id="currentTime" class="text-lg font-medium text-emerald-600 tracking-wider font-mono">--:--:--</div>
+                <div class="flex items-center justify-end space-x-1 mt-1">
                     <span id="mqttStatusCircle" class="w-2 h-2 rounded-full bg-slate-300"></span>
                     <span id="mqttStatus" class="text-[10px] uppercase font-bold text-slate-400">Connecting</span>
                 </div>
@@ -59,6 +66,7 @@
                     <span id="temperature" class="text-3xl font-bold text-slate-700">--</span>
                     <span class="text-lg text-slate-400">°C</span>
                 </div>
+                <p class="text-xs text-slate-400 mt-2">อุณหภูมิสภาพแวดล้อม</p>
             </div>
             <!-- Humidity -->
             <div class="glass-card rounded-2xl p-4 shadow-sm border-l-4 border-blue-400">
@@ -70,6 +78,7 @@
                     <span id="humidity" class="text-3xl font-bold text-slate-700">--</span>
                     <span class="text-lg text-slate-400">%</span>
                 </div>
+                <p class="text-xs text-slate-400 mt-2">ความชื้นสัมพัทธ์</p>
             </div>
             <!-- ESP Status -->
             <div class="glass-card rounded-2xl p-4 shadow-sm border-l-4 border-emerald-400">
@@ -80,6 +89,7 @@
                 <div class="flex items-center space-x-2">
                     <span id="espStatus" class="text-xl font-bold text-slate-700">Offline</span>
                 </div>
+                <p class="text-xs text-slate-400 mt-2">สถานะอุปกรณ์ ESP8266</p>
             </div>
             <!-- Mode Status -->
             <div class="glass-card rounded-2xl p-4 shadow-sm border-l-4 border-purple-400">
@@ -90,6 +100,7 @@
                 <div class="flex items-center space-x-2">
                     <span id="currentMode" class="text-xl font-bold text-slate-700 uppercase">Manual</span>
                 </div>
+                <p class="text-xs text-slate-400 mt-2">โหมดการทำงาน</p>
             </div>
         </div>
 
@@ -112,7 +123,7 @@
                         </div>
                     </div>
                     <h3 class="font-medium text-slate-800">ปั๊มน้ำ</h3>
-                    <p id="pumpStatusText" class="text-sm text-slate-400">กำลังปิด...</p>
+                    <p id="pumpStatusText" class="text-sm text-slate-400">ปิดการใช้งาน</p>
                 </div>
                 <!-- Zone 1 -->
                 <div class="glass-card rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
@@ -126,7 +137,7 @@
                         </div>
                     </div>
                     <h3 class="font-medium text-slate-800">โซน 1</h3>
-                    <p id="zone1StatusText" class="text-sm text-slate-400">กำลังปิด...</p>
+                    <p id="zone1StatusText" class="text-sm text-slate-400">ปิดการใช้งาน</p>
                 </div>
                 <!-- Light Home -->
                 <div class="glass-card rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
@@ -140,7 +151,7 @@
                         </div>
                     </div>
                     <h3 class="font-medium text-slate-800">ไฟบ้าน</h3>
-                    <p id="lightHomeStatusText" class="text-sm text-slate-400">กำลังปิด...</p>
+                    <p id="lightHomeStatusText" class="text-sm text-slate-400">ปิดการใช้งาน</p>
                 </div>
                 <!-- Light Sala -->
                 <div class="glass-card rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
@@ -154,7 +165,7 @@
                         </div>
                     </div>
                     <h3 class="font-medium text-slate-800">ไฟศาลา</h3>
-                    <p id="lightSalaStatusText" class="text-sm text-slate-400">กำลังปิด...</p>
+                    <p id="lightSalaStatusText" class="text-sm text-slate-400">ปิดการใช้งาน</p>
                 </div>
             </div>
         </section>
@@ -168,8 +179,8 @@
                     <p class="text-sm text-slate-500 mb-6">เลือกโหมดการควบคุมระบบฟาร์ม</p>
                 </div>
                 <div class="flex p-1 bg-slate-100 rounded-xl">
-                    <button id="manualModeBtn" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all">Manual</button>
-                    <button id="autoModeBtn" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all">Auto</button>
+                    <button id="manualModeBtn" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all bg-white shadow-sm text-purple-600">Manual</button>
+                    <button id="autoModeBtn" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all text-slate-500 hover:text-slate-700">Auto</button>
                 </div>
             </div>
 
@@ -212,10 +223,21 @@
                 </button>
             </div>
         </div>
+
+        <!-- Info Section -->
+        <section class="glass-card rounded-2xl p-6 shadow-sm bg-blue-50 border-l-4 border-blue-400">
+            <div class="flex items-start space-x-3">
+                <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+                <div>
+                    <h3 class="font-semibold text-blue-900 mb-1">ข้อมูลระบบ</h3>
+                    <p class="text-sm text-blue-800">ระบบ Smart Farm ใช้ RTC (Real-Time Clock) สำหรับการจัดเวลาที่แม่นยำ เวลาจะถูกซิงค์อัตโนมัติจาก NTP Server ทุกชั่วโมง เพื่อให้การกำหนดเวลาเปิด-ปิดอุปกรณ์มีความถูกต้องสูงสุด</p>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer class="mt-12 text-center text-slate-400 text-sm">
-        <p>&copy; 2026 สวนลุงนะ Smart Farm System</p>
+        <p>&copy; 2026 สวนลุงนะ Smart Farm System - Powered by RTC & MQTT</p>
     </footer>
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
