@@ -1,0 +1,9 @@
+TEST MQTT SETTINGS
+Broker: broker.hivemq.com
+ESP8266: TCP 1883
+GitHub Pages: WSS 8884 /mqtt
+Username: none
+Password: none
+
+This public broker is for testing only.
+For a real farm installation, use a private authenticated broker.

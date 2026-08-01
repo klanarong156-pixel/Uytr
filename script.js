@@ -1,147 +1,258 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const espStatusElement = document.getElementById('espStatus');
-    const temperatureElement = document.getElementById('temperature');
-    const humidityElement = document.getElementById('humidity');
-    const currentTimeElement = document.getElementById('currentTime');
-    const mqttStatusElement = document.getElementById('mqttStatus');
+document.addEventListener("DOMContentLoaded", () => {
+    // ============================================================
+    // SMART FARM MQTT CONFIG
+    // IMPORTANT:
+    // GitHub Pages is HTTPS, so the browser needs MQTT over WSS.
+    // Example: wss://YOUR-MQTT-BROKER:8084/mqtt
+    // The ESP8266 can use normal MQTT TCP (usually port 1883).
+    // ============================================================
+    const MQTT_CONFIG = {
+        url: "wss://broker.hivemq.com:8884/mqtt",
+        username: "",
+        password: "",
+        clientId: "SmartFarmWeb-" + Math.random().toString(16).slice(2)
+    };
 
-    const pumpToggleBtn = document.getElementById('pumpToggle');
-    const zone1ToggleBtn = document.getElementById('zone1Toggle');
-    const lightHomeToggleBtn = document.getElementById('lightHomeToggle');
-    const lightSalaToggleBtn = document.getElementById('lightSalaToggle');
+    const TOPIC = {
+        online: "smartfarm/status/online",
+        sensor: "smartfarm/sensor/dht11",
+        time: "smartfarm/time",
+        modeSet: "smartfarm/mode/set",
+        modeStatus: "smartfarm/mode/status",
+        mqttStatus: "smartfarm/mqtt/status",
 
-    const manualModeBtn = document.getElementById('manualModeBtn');
-    const autoModeBtn = document.getElementById('autoModeBtn');
-    const currentModeElement = document.getElementById('currentMode');
+        pumpSet: "smartfarm/relay/pump/set",
+        pumpStatus: "smartfarm/relay/pump/status",
+        zone1Set: "smartfarm/relay/zone1/set",
+        zone1Status: "smartfarm/relay/zone1/status",
+        lightHomeSet: "smartfarm/relay/lighthome/set",
+        lightHomeStatus: "smartfarm/relay/lighthome/status",
+        lightSalaSet: "smartfarm/relay/lightsala/set",
+        lightSalaStatus: "smartfarm/relay/lightsala/status",
 
-    const pumpScheduleEnable = document.getElementById('pumpScheduleEnable');
-    const pumpOnInput = document.getElementById('pumpOnInput');
-    const pumpOffInput = document.getElementById('pumpOffInput');
-    const saveSchedulesBtn = document.getElementById('saveSchedulesBtn');
+        pumpScheduleSet: "smartfarm/schedule/pump/set",
+        pumpScheduleStatus: "smartfarm/schedule/pump/status"
+    };
 
-    // Function to update UI based on MQTT messages
+    const $ = id => document.getElementById(id);
+
+    const espStatusElement = $("espStatus");
+    const temperatureElement = $("temperature");
+    const humidityElement = $("humidity");
+    const currentTimeElement = $("currentTime");
+    const mqttStatusElement = $("mqttStatus");
+
+    const pumpToggleBtn = $("pumpToggle");
+    const zone1ToggleBtn = $("zone1Toggle");
+    const lightHomeToggleBtn = $("lightHomeToggle");
+    const lightSalaToggleBtn = $("lightSalaToggle");
+
+    const manualModeBtn = $("manualModeBtn");
+    const autoModeBtn = $("autoModeBtn");
+    const currentModeElement = $("currentMode");
+
+    const pumpScheduleEnable = $("pumpScheduleEnable");
+    const pumpOnInput = $("pumpOnInput");
+    const pumpOffInput = $("pumpOffInput");
+    const saveSchedulesBtn = $("saveSchedulesBtn");
+
+    let mqttClient = null;
+
+    function setMqttStatus(text, connected = false) {
+        mqttStatusElement.textContent = text;
+        mqttStatusElement.style.color = connected ? "green" : "red";
+    }
+
+    function updateRelayButton(button, message) {
+        if (!button) return;
+        const state = String(message).trim().toUpperCase();
+        button.textContent = state === "ON" ? "เปิด" : "ปิด";
+        button.classList.toggle("active", state === "ON");
+        button.dataset.state = state;
+    }
+
     function updateUI(topic, message) {
+        message = String(message);
+
         switch (topic) {
-            case 'smartfarm/status/online':
-                espStatusElement.textContent = (message === 'true') ? 'Online' : 'Offline';
-                espStatusElement.style.color = (message === 'true') ? 'green' : 'red';
+            case TOPIC.online:
+                espStatusElement.textContent =
+                    message.toLowerCase() === "true" ? "Online" : "Offline";
+                espStatusElement.style.color =
+                    message.toLowerCase() === "true" ? "green" : "red";
                 break;
-            case 'smartfarm/sensor/dht11':
+
+            case TOPIC.sensor:
                 try {
                     const data = JSON.parse(message);
-                    temperatureElement.textContent = data.temperature;
-                    humidityElement.textContent = data.humidity;
+                    if (data.temperature !== undefined)
+                        temperatureElement.textContent = data.temperature;
+                    if (data.humidity !== undefined)
+                        humidityElement.textContent = data.humidity;
                 } catch (e) {
-                    console.error('Error parsing DHT11 data:', e);
+                    console.error("DHT11 JSON error:", e, message);
                 }
                 break;
-            case 'smartfarm/time':
+
+            case TOPIC.time:
                 currentTimeElement.textContent = message;
                 break;
-            case 'smartfarm/mqtt/status': // Assuming the ESP publishes its MQTT connection status
-                mqttStatusElement.textContent = message;
-                mqttStatusElement.style.color = (message === 'Connected') ? 'green' : 'red';
+
+            case TOPIC.pumpStatus:
+                updateRelayButton(pumpToggleBtn, message);
                 break;
-            case 'smartfarm/relay/pump/status':
-                pumpToggleBtn.textContent = message;
-                pumpToggleBtn.classList.toggle('active', message === 'ON');
+
+            case TOPIC.zone1Status:
+                updateRelayButton(zone1ToggleBtn, message);
                 break;
-            case 'smartfarm/relay/zone1/status':
-                zone1ToggleBtn.textContent = message;
-                zone1ToggleBtn.classList.toggle('active', message === 'ON');
+
+            case TOPIC.lightHomeStatus:
+                updateRelayButton(lightHomeToggleBtn, message);
                 break;
-            case 'smartfarm/relay/lighthome/status':
-                lightHomeToggleBtn.textContent = message;
-                lightHomeToggleBtn.classList.toggle('active', message === 'ON');
+
+            case TOPIC.lightSalaStatus:
+                updateRelayButton(lightSalaToggleBtn, message);
                 break;
-            case 'smartfarm/relay/lightsala/status':
-                lightSalaToggleBtn.textContent = message;
-                lightSalaToggleBtn.classList.toggle('active', message === 'ON');
-                break;
-            case 'smartfarm/mode/status':
+
+            case TOPIC.modeStatus:
                 currentModeElement.textContent = message;
                 break;
-            case 'smartfarm/schedule/pump/status':
+
+            case TOPIC.pumpScheduleStatus:
                 try {
                     const schedule = JSON.parse(message);
-                    pumpScheduleEnable.checked = schedule.enabled;
-                    pumpOnInput.value = schedule.on;
-                    pumpOffInput.value = schedule.off;
+                    pumpScheduleEnable.checked = !!schedule.enabled;
+                    pumpOnInput.value = schedule.on || "";
+                    pumpOffInput.value = schedule.off || "";
                 } catch (e) {
-                    console.error('Error parsing pump schedule data:', e);
+                    console.error("Schedule JSON error:", e, message);
                 }
                 break;
-            // Add cases for other relay schedules
         }
     }
 
-    // Placeholder for MQTT connection (this would typically be handled by a WebSocket to MQTT bridge or direct MQTT over WebSockets)
-    // For this example, we'll simulate updates or assume the ESP's web server provides an API to get current states.
-    // In a real scenario, you'd use a library like Paho MQTT JavaScript client.
+    function publish(topic, message) {
+        if (!mqttClient || !mqttClient.connected) {
+            alert("ยังไม่ได้เชื่อมต่อ MQTT");
+            return false;
+        }
+        mqttClient.publish(topic, String(message), { qos: 0, retain: false });
+        return true;
+    }
 
-    // Simulate MQTT updates for demonstration purposes
-    let simulatedEspOnline = true;
-    let simulatedPumpStatus = 'OFF';
-    let simulatedMode = 'MANUAL';
+    function connectMQTT() {
+        if (!window.mqtt) {
+            setMqttStatus("ไม่พบ MQTT library");
+            console.error("MQTT.js failed to load.");
+            return;
+        }
 
-    setInterval(() => {
-        // Simulate ESP status
-        simulatedEspOnline = !simulatedEspOnline;
-        updateUI('smartfarm/status/online', simulatedEspOnline ? 'true' : 'false');
-        updateUI('smartfarm/mqtt/status', 'Connected'); // Assume connected if ESP is online
+        if (!MQTT_CONFIG.url || MQTT_CONFIG.url.includes("YOUR_MQTT_BROKER")) {
+            setMqttStatus("ยังไม่ได้ตั้งค่า Broker");
+            console.warn("กรุณาแก้ MQTT_CONFIG.url ใน script.js");
+            return;
+        }
 
-        // Simulate sensor data
-        const temp = (Math.random() * 10 + 25).toFixed(1); // 25-35 C
-        const hum = (Math.random() * 20 + 60).toFixed(1); // 60-80 %
-        updateUI('smartfarm/sensor/dht11', JSON.stringify({ temperature: temp, humidity: hum }));
+        setMqttStatus("กำลังเชื่อมต่อ...");
 
-        // Simulate time
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        updateUI('smartfarm/time', timeString);
+        const options = {
+            clientId: MQTT_CONFIG.clientId,
+            clean: true,
+            connectTimeout: 10000,
+            reconnectPeriod: 5000
+        };
 
-        // Simulate relay status
-        updateUI('smartfarm/relay/pump/status', simulatedPumpStatus);
-        updateUI('smartfarm/mode/status', simulatedMode);
+        if (MQTT_CONFIG.username) options.username = MQTT_CONFIG.username;
+        if (MQTT_CONFIG.password) options.password = MQTT_CONFIG.password;
 
-    }, 5000); // Update every 5 seconds
+        mqttClient = mqtt.connect(MQTT_CONFIG.url, options);
 
-    // Event listeners for relay buttons
-    pumpToggleBtn.addEventListener('click', () => {
-        simulatedPumpStatus = (simulatedPumpStatus === 'ON') ? 'OFF' : 'ON';
-        // In a real app, send MQTT command: client.publish('smartfarm/relay/pump/set', simulatedPumpStatus);
-        updateUI('smartfarm/relay/pump/status', simulatedPumpStatus);
-    });
-    // Add event listeners for other relay buttons
+        mqttClient.on("connect", () => {
+            setMqttStatus("Connected", true);
 
-    // Event listeners for mode buttons
-    manualModeBtn.addEventListener('click', () => {
-        simulatedMode = 'MANUAL';
-        // In a real app, send MQTT command: client.publish('smartfarm/mode/set', 'MANUAL');
-        updateUI('smartfarm/mode/status', 'MANUAL');
-    });
+            mqttClient.subscribe([
+                TOPIC.online,
+                TOPIC.sensor,
+                TOPIC.time,
+                TOPIC.pumpStatus,
+                TOPIC.zone1Status,
+                TOPIC.lightHomeStatus,
+                TOPIC.lightSalaStatus,
+                TOPIC.modeStatus,
+                TOPIC.pumpScheduleStatus
+            ], { qos: 0 });
 
-    autoModeBtn.addEventListener('click', () => {
-        simulatedMode = 'AUTO';
-        // In a real app, send MQTT command: client.publish('smartfarm/mode/set', 'AUTO');
-        updateUI('smartfarm/mode/status', 'AUTO');
-    });
+            // Ask the ESP/broker for current state by subscribing to retained status.
+            // ESP should publish retained status messages.
+            publish(TOPIC.mqttStatus, "Connected");
+        });
 
-    // Event listener for save schedules button
-    saveSchedulesBtn.addEventListener('click', () => {
-        const pumpSchedule = {
+        mqttClient.on("message", (topic, payload) => {
+            updateUI(topic, payload.toString());
+        });
+
+        mqttClient.on("reconnect", () => setMqttStatus("กำลังเชื่อมต่อใหม่..."));
+        mqttClient.on("offline", () => setMqttStatus("Offline"));
+        mqttClient.on("close", () => setMqttStatus("Disconnected"));
+        mqttClient.on("error", err => {
+            setMqttStatus("MQTT Error");
+            console.error("MQTT:", err);
+        });
+    }
+
+    function toggleRelay(button, topic) {
+        const current = button.dataset.state === "ON" ? "ON" : "OFF";
+        const next = current === "ON" ? "OFF" : "ON";
+        publish(topic, next);
+    }
+
+    pumpToggleBtn.addEventListener("click", () =>
+        toggleRelay(pumpToggleBtn, TOPIC.pumpSet)
+    );
+
+    zone1ToggleBtn.addEventListener("click", () =>
+        toggleRelay(zone1ToggleBtn, TOPIC.zone1Set)
+    );
+
+    lightHomeToggleBtn.addEventListener("click", () =>
+        toggleRelay(lightHomeToggleBtn, TOPIC.lightHomeSet)
+    );
+
+    lightSalaToggleBtn.addEventListener("click", () =>
+        toggleRelay(lightSalaToggleBtn, TOPIC.lightSalaSet)
+    );
+
+    manualModeBtn.addEventListener("click", () =>
+        publish(TOPIC.modeSet, "MANUAL")
+    );
+
+    autoModeBtn.addEventListener("click", () =>
+        publish(TOPIC.modeSet, "AUTO")
+    );
+
+    saveSchedulesBtn.addEventListener("click", () => {
+        const schedule = {
             enabled: pumpScheduleEnable.checked,
             on: pumpOnInput.value,
             off: pumpOffInput.value
         };
-        // In a real app, send MQTT command: client.publish('smartfarm/schedule/pump/set', JSON.stringify(pumpSchedule));
-        console.log('Saving pump schedule:', pumpSchedule);
-        alert('บันทึกการตั้งค่าเรียบร้อยแล้ว (Simulated)');
+
+        if (publish(TOPIC.pumpScheduleSet, JSON.stringify(schedule))) {
+            alert("ส่งการตั้งค่าไปยัง ESP8266 แล้ว");
+        }
     });
 
-    // Initial UI update (can be fetched from ESP on page load)
-    updateUI('smartfarm/status/online', 'false');
-    updateUI('smartfarm/mqtt/status', 'Disconnected');
-    updateUI('smartfarm/relay/pump/status', 'OFF');
-    updateUI('smartfarm/mode/status', 'MANUAL');
+    // Initial UI
+    espStatusElement.textContent = "Offline";
+    temperatureElement.textContent = "--";
+    humidityElement.textContent = "--";
+    currentTimeElement.textContent = "--:--:--";
+    setMqttStatus("Disconnected");
+    updateRelayButton(pumpToggleBtn, "OFF");
+    updateRelayButton(zone1ToggleBtn, "OFF");
+    updateRelayButton(lightHomeToggleBtn, "OFF");
+    updateRelayButton(lightSalaToggleBtn, "OFF");
+    currentModeElement.textContent = "MANUAL";
+
+    connectMQTT();
 });
