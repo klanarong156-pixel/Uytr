@@ -1,133 +1,54 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
-    color: #333;
+/* Custom Styles for Smart Farm Dashboard */
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
-.container {
-    max-width: 800px;
-    margin: 20px auto;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* Animations */
+@keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
-header {
-    text-align: center;
-    margin-bottom: 20px;
+.animate-pulse-soft {
+    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.logo-container {
-    margin-bottom: 10px;
+/* Glassmorphism Refinements */
+.glass-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-header .logo {
-    max-width: 200px;
-    height: auto;
-    border-radius: 50%;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.glass-card:hover {
+    transform: translateY(-2px);
 }
 
-.subtitle {
-    font-style: italic;
-    color: #666;
-    margin-top: -10px;
-    margin-bottom: 20px;
+/* Lucide Icon Alignment */
+.lucide {
+    display: inline-block;
+    vertical-align: middle;
 }
 
-h1 {
-    color: #007bff;
+/* Input Focus */
+input[type="time"]:focus {
+    outline: none;
+    box-shadow: none;
 }
 
-section {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-h2 {
-    color: #007bff;
-    margin-top: 0;
-}
-
-.relay-control, .mode-section div, .schedule-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-.schedule-item:last-child {
-    border-bottom: none;
-}
-
-.schedule-info {
-    flex-grow: 1;
-}
-
-.schedule-info input[type="time"] {
-    padding: 5px;
-    margin: 0 5px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.save-btn {
-    background-color: #28a745;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.save-btn:hover {
-    background-color: #218838;
-}
-
-button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
-button.active {
-    background-color: #28a745;
-}
-
-button.active:hover {
-    background-color: #218838;
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-    .container {
-        margin: 10px;
-        padding: 15px;
-    }
-
-    .relay-control, .mode-section div {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .relay-control label, .mode-section label {
-        margin-bottom: 5px;
-    }
-
-    button {
-        width: 100%;
-        margin-top: 5px;
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    h1 {
+        font-size: 1.125rem;
     }
 }

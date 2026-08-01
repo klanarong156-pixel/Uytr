@@ -5,9 +5,8 @@
 #include <WiFiUdp.h>
 #include <ArduinoJson.h>
 #include <ArduinoOTA.h>
-#include <FS.h>
+#include <LittleFS.h>
 #include <ESP8266WebServer.h>
-
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
 
@@ -15,8 +14,8 @@
 const char* telegramHost = "api.telegram.org";
 
 // WiFi credentials
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "Klarong-2.5G";
+const char* password = "kla56435";
 
 // Function Prototypes
 void sendTelegramMessage(String message);
@@ -66,21 +65,30 @@ ESP8266WebServer server(80);
 void setup_wifi() {
   delay(10);
   Serial.println();
-  Serial.print("Connecting to ");
+  Serial.println(F("------------------------------"));
+  Serial.print(F("WiFi: Connecting to "));
   Serial.println(ssid);
 
-  WiFi.mode(WiFi_STA);
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
+  int attempt = 0;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial.print(F("."));
+    attempt++;
+    if (attempt > 40) { // If takes too long, restart WiFi
+       Serial.println(F("\nWiFi: Failed to connect, retrying..."));
+       WiFi.begin(ssid, password);
+       attempt = 0;
+    }
   }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.print("IP address: ");
+  Serial.println(F(""));
+  Serial.println(F("WiFi: Connected Successfully!"));
+  Serial.print(F("WiFi: IP Address: "));
   Serial.println(WiFi.localIP());
+  Serial.println(F("------------------------------"));
   
   // Configure WiFiClientSecure to use insecure mode (no certificate check) for HiveMQ Cloud
   espClient.setInsecure();
@@ -88,10 +96,10 @@ void setup_wifi() {
 
 void reconnect_mqtt() {
   while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
+    Serial.print(F("MQTT: Attempting connection to HiveMQ..."));
     if (client.connect(mqtt_client_id, mqtt_user, mqtt_pass,
                        "smartfarm/status/online", 0, true, "false")) {
-      Serial.println("connected");
+      Serial.println(F("Success!"));
       // Subscribe to topics
       client.subscribe("smartfarm/relay/pump/set");
       client.subscribe("smartfarm/relay/zone1/set");
@@ -457,8 +465,10 @@ void loadConfig() {
 
 // Update setup() to load config
 void setup() {
-  Serial.begin(115200);
-  Serial.println("\nBooting Smart Farm...");
+  Serial.begin(9600);
+  delay(1000);
+  Serial.println(F("\n--- Smart Farm System Booting ---"));
+  Serial.println(F("Baud Rate: 9600"));
 
   if (!LittleFS.begin()) {
     Serial.println("An Error has occurred while mounting LittleFS");

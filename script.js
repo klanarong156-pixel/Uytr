@@ -1,10 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     // SMART FARM MQTT CONFIG
-    // IMPORTANT:
-    // GitHub Pages is HTTPS, so the browser needs MQTT over WSS.
-    // Example: wss://YOUR-MQTT-BROKER:8084/mqtt
-    // The ESP8266 can use normal MQTT TCP (usually port 1883).
     // ============================================================
     const MQTT_CONFIG = {
         url: "wss://650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud:8884/mqtt",
@@ -41,11 +37,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const humidityElement = $("humidity");
     const currentTimeElement = $("currentTime");
     const mqttStatusElement = $("mqttStatus");
+    const mqttStatusCircle = $("mqttStatusCircle");
 
-    const pumpToggleBtn = $("pumpToggle");
-    const zone1ToggleBtn = $("zone1Toggle");
-    const lightHomeToggleBtn = $("lightHomeToggle");
-    const lightSalaToggleBtn = $("lightSalaToggle");
+    const pumpToggle = $("pumpToggle");
+    const zone1Toggle = $("zone1Toggle");
+    const lightHomeToggle = $("lightHomeToggle");
+    const lightSalaToggle = $("lightSalaToggle");
+
+    const pumpStatusText = $("pumpStatusText");
+    const zone1StatusText = $("zone1StatusText");
+    const lightHomeStatusText = $("lightHomeStatusText");
+    const lightSalaStatusText = $("lightSalaStatusText");
 
     const manualModeBtn = $("manualModeBtn");
     const autoModeBtn = $("autoModeBtn");
@@ -58,17 +60,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let mqttClient = null;
 
-    function setMqttStatus(text, connected = false) {
+    function setMqttStatus(text, status = "disconnected") {
         mqttStatusElement.textContent = text;
-        mqttStatusElement.style.color = connected ? "green" : "red";
+        mqttStatusCircle.className = "w-2 h-2 rounded-full " + 
+            (status === "connected" ? "bg-emerald-500 animate-pulse" : 
+             status === "connecting" ? "bg-amber-500 animate-bounce" : "bg-rose-500");
+        mqttStatusElement.className = "text-[10px] uppercase font-bold " + 
+            (status === "connected" ? "text-emerald-600" : 
+             status === "connecting" ? "text-amber-600" : "text-rose-600");
     }
 
-    function updateRelayButton(button, message) {
-        if (!button) return;
+    function updateRelayUI(checkbox, statusText, message) {
+        if (!checkbox) return;
         const state = String(message).trim().toUpperCase();
-        button.textContent = state === "ON" ? "เปิด" : "ปิด";
-        button.classList.toggle("active", state === "ON");
-        button.dataset.state = state;
+        const isOn = state === "ON";
+        checkbox.checked = isOn;
+        if (statusText) {
+            statusText.textContent = isOn ? "เปิดใช้งานอยู่" : "ปิดการใช้งาน";
+            statusText.className = "text-sm font-medium " + (isOn ? "text-emerald-500" : "text-slate-400");
+        }
+    }
+
+    function updateModeUI(mode) {
+        const isAuto = String(mode).trim().toUpperCase() === "AUTO";
+        currentModeElement.textContent = isAuto ? "Auto" : "Manual";
+        
+        manualModeBtn.className = isAuto ? 
+            "flex-1 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700" : 
+            "flex-1 py-2 rounded-lg text-sm font-medium bg-white shadow-sm text-purple-600";
+        
+        autoModeBtn.className = isAuto ? 
+            "flex-1 py-2 rounded-lg text-sm font-medium bg-white shadow-sm text-purple-600" : 
+            "flex-1 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700";
     }
 
     function updateUI(topic, message) {
@@ -76,19 +99,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         switch (topic) {
             case TOPIC.online:
-                espStatusElement.textContent =
-                    message.toLowerCase() === "true" ? "Online" : "Offline";
-                espStatusElement.style.color =
-                    message.toLowerCase() === "true" ? "green" : "red";
+                const isOnline = message.toLowerCase() === "true";
+                espStatusElement.textContent = isOnline ? "Online" : "Offline";
+                espStatusElement.className = "text-xl font-bold " + (isOnline ? "text-emerald-600" : "text-rose-600");
                 break;
 
             case TOPIC.sensor:
                 try {
                     const data = JSON.parse(message);
-                    if (data.temperature !== undefined)
-                        temperatureElement.textContent = data.temperature;
-                    if (data.humidity !== undefined)
-                        humidityElement.textContent = data.humidity;
+                    if (data.temperature !== undefined) temperatureElement.textContent = data.temperature;
+                    if (data.humidity !== undefined) humidityElement.textContent = data.humidity;
                 } catch (e) {
                     console.error("DHT11 JSON error:", e, message);
                 }
@@ -99,23 +119,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 break;
 
             case TOPIC.pumpStatus:
-                updateRelayButton(pumpToggleBtn, message);
+                updateRelayUI(pumpToggle, pumpStatusText, message);
                 break;
 
             case TOPIC.zone1Status:
-                updateRelayButton(zone1ToggleBtn, message);
+                updateRelayUI(zone1Toggle, zone1StatusText, message);
                 break;
 
             case TOPIC.lightHomeStatus:
-                updateRelayButton(lightHomeToggleBtn, message);
+                updateRelayUI(lightHomeToggle, lightHomeStatusText, message);
                 break;
 
             case TOPIC.lightSalaStatus:
-                updateRelayButton(lightSalaToggleBtn, message);
+                updateRelayUI(lightSalaToggle, lightSalaStatusText, message);
                 break;
 
             case TOPIC.modeStatus:
-                currentModeElement.textContent = message;
+                updateModeUI(message);
                 break;
 
             case TOPIC.pumpScheduleStatus:
@@ -133,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function publish(topic, message) {
         if (!mqttClient || !mqttClient.connected) {
-            alert("ยังไม่ได้เชื่อมต่อ MQTT");
+            console.warn("MQTT not connected");
             return false;
         }
         mqttClient.publish(topic, String(message), { qos: 0, retain: false });
@@ -142,93 +162,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function connectMQTT() {
         if (!window.mqtt) {
-            setMqttStatus("ไม่พบ MQTT library");
-            console.error("MQTT.js failed to load.");
+            setMqttStatus("No Library", "error");
             return;
         }
 
-        if (!MQTT_CONFIG.url || MQTT_CONFIG.url.includes("YOUR_MQTT_BROKER")) {
-            setMqttStatus("ยังไม่ได้ตั้งค่า Broker");
-            console.warn("กรุณาแก้ MQTT_CONFIG.url ใน script.js");
-            return;
-        }
-
-        setMqttStatus("กำลังเชื่อมต่อ...");
+        setMqttStatus("Connecting", "connecting");
 
         const options = {
             clientId: MQTT_CONFIG.clientId,
             clean: true,
             connectTimeout: 10000,
-            reconnectPeriod: 5000
+            reconnectPeriod: 5000,
+            username: MQTT_CONFIG.username,
+            password: MQTT_CONFIG.password
         };
-
-        if (MQTT_CONFIG.username) options.username = MQTT_CONFIG.username;
-        if (MQTT_CONFIG.password) options.password = MQTT_CONFIG.password;
 
         mqttClient = mqtt.connect(MQTT_CONFIG.url, options);
 
         mqttClient.on("connect", () => {
-            setMqttStatus("Connected", true);
-
-            mqttClient.subscribe([
-                TOPIC.online,
-                TOPIC.sensor,
-                TOPIC.time,
-                TOPIC.pumpStatus,
-                TOPIC.zone1Status,
-                TOPIC.lightHomeStatus,
-                TOPIC.lightSalaStatus,
-                TOPIC.modeStatus,
-                TOPIC.pumpScheduleStatus
-            ], { qos: 0 });
-
-            // Ask the ESP/broker for current state by subscribing to retained status.
-            // ESP should publish retained status messages.
-            publish(TOPIC.mqttStatus, "Connected");
+            setMqttStatus("Connected", "connected");
+            mqttClient.subscribe(Object.values(TOPIC), { qos: 0 });
+            publish(TOPIC.mqttStatus, "Web Dashboard Connected");
         });
 
         mqttClient.on("message", (topic, payload) => {
             updateUI(topic, payload.toString());
         });
 
-        mqttClient.on("reconnect", () => setMqttStatus("กำลังเชื่อมต่อใหม่..."));
-        mqttClient.on("offline", () => setMqttStatus("Offline"));
-        mqttClient.on("close", () => setMqttStatus("Disconnected"));
+        mqttClient.on("reconnect", () => setMqttStatus("Reconnecting", "connecting"));
+        mqttClient.on("offline", () => setMqttStatus("Offline", "error"));
+        mqttClient.on("close", () => setMqttStatus("Disconnected", "error"));
         mqttClient.on("error", err => {
-            setMqttStatus("MQTT Error");
-            console.error("MQTT:", err);
+            setMqttStatus("Error", "error");
+            console.error("MQTT Error:", err);
         });
     }
 
-    function toggleRelay(button, topic) {
-        const current = button.dataset.state === "ON" ? "ON" : "OFF";
-        const next = current === "ON" ? "OFF" : "ON";
-        publish(topic, next);
-    }
+    // Event Listeners
+    const handleToggle = (checkbox, topic) => {
+        const nextState = checkbox.checked ? "ON" : "OFF";
+        publish(topic, nextState);
+    };
 
-    pumpToggleBtn.addEventListener("click", () =>
-        toggleRelay(pumpToggleBtn, TOPIC.pumpSet)
-    );
+    pumpToggle.addEventListener("change", () => handleToggle(pumpToggle, TOPIC.pumpSet));
+    zone1Toggle.addEventListener("change", () => handleToggle(zone1Toggle, TOPIC.zone1Set));
+    lightHomeToggle.addEventListener("change", () => handleToggle(lightHomeToggle, TOPIC.lightHomeSet));
+    lightSalaToggle.addEventListener("change", () => handleToggle(lightSalaToggle, TOPIC.lightSalaSet));
 
-    zone1ToggleBtn.addEventListener("click", () =>
-        toggleRelay(zone1ToggleBtn, TOPIC.zone1Set)
-    );
-
-    lightHomeToggleBtn.addEventListener("click", () =>
-        toggleRelay(lightHomeToggleBtn, TOPIC.lightHomeSet)
-    );
-
-    lightSalaToggleBtn.addEventListener("click", () =>
-        toggleRelay(lightSalaToggleBtn, TOPIC.lightSalaSet)
-    );
-
-    manualModeBtn.addEventListener("click", () =>
-        publish(TOPIC.modeSet, "MANUAL")
-    );
-
-    autoModeBtn.addEventListener("click", () =>
-        publish(TOPIC.modeSet, "AUTO")
-    );
+    manualModeBtn.addEventListener("click", () => publish(TOPIC.modeSet, "MANUAL"));
+    autoModeBtn.addEventListener("click", () => publish(TOPIC.modeSet, "AUTO"));
 
     saveSchedulesBtn.addEventListener("click", () => {
         const schedule = {
@@ -236,23 +218,18 @@ document.addEventListener("DOMContentLoaded", () => {
             on: pumpOnInput.value,
             off: pumpOffInput.value
         };
-
         if (publish(TOPIC.pumpScheduleSet, JSON.stringify(schedule))) {
-            alert("ส่งการตั้งค่าไปยัง ESP8266 แล้ว");
+            const originalText = saveSchedulesBtn.innerHTML;
+            saveSchedulesBtn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i><span>บันทึกสำเร็จ</span>';
+            saveSchedulesBtn.className = "w-full mt-6 bg-blue-600 text-white font-medium py-3 rounded-xl transition-all flex items-center justify-center space-x-2";
+            lucide.createIcons();
+            setTimeout(() => {
+                saveSchedulesBtn.innerHTML = originalText;
+                saveSchedulesBtn.className = "w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-emerald-100 flex items-center justify-center space-x-2";
+                lucide.createIcons();
+            }, 2000);
         }
     });
-
-    // Initial UI
-    espStatusElement.textContent = "Offline";
-    temperatureElement.textContent = "--";
-    humidityElement.textContent = "--";
-    currentTimeElement.textContent = "--:--:--";
-    setMqttStatus("Disconnected");
-    updateRelayButton(pumpToggleBtn, "OFF");
-    updateRelayButton(zone1ToggleBtn, "OFF");
-    updateRelayButton(lightHomeToggleBtn, "OFF");
-    updateRelayButton(lightSalaToggleBtn, "OFF");
-    currentModeElement.textContent = "MANUAL";
 
     connectMQTT();
 });

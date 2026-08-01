@@ -8,8 +8,8 @@
 #include <LittleFS.h>
 #include <WiFiClientSecure.h>
 
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "Klarong-2.5G";
+const char* password = "kla56435";
 
 // Function Prototypes
 void setup_wifi();
@@ -135,14 +135,14 @@ void setup_wifi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
-  Serial.print("Connecting WiFi");
+  Serial.print(F("Connecting WiFi"));
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial.print(F("."));
   }
 
   Serial.println();
-  Serial.print("WiFi IP: ");
+  Serial.print(F("WiFi IP: "));
   Serial.println(WiFi.localIP());
 }
 
@@ -190,11 +190,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 void reconnect_mqtt() {
   while (!client.connected()) {
-    Serial.print("MQTT connecting... ");
+    Serial.print(F("MQTT connecting... "));
 
     if (client.connect(mqtt_client_id, mqtt_user, mqtt_pass,
                        "smartfarm/status/online", 0, true, "false")) {
-      Serial.println("OK");
+      Serial.println(F("OK"));
 
       client.subscribe("smartfarm/relay/pump/set");
       client.subscribe("smartfarm/relay/zone1/set");
@@ -245,7 +245,10 @@ void handleScheduledTasks() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
+  delay(1000);
+  Serial.println(F("\n--- Smart Farm (Connected Mode) Booting ---"));
+  Serial.println(F("Baud Rate: 9600"));
   
   // Configure WiFiClientSecure for HiveMQ Cloud
   espClient.setInsecure();
