@@ -303,10 +303,10 @@ void loop() {
   // ซิงค์เวลา
   if (now - lastRTCsync > rtcSyncInterval || lastRTCsync == 0) {
     if (WiFi.status() == WL_CONNECTED && timeClient.update()) {
-      rtc.adjust(DateTime(rtc.now().year(), rtc.now().month(), rtc.now().day(), 
-                          timeClient.getHours(), timeClient.getMinutes(), timeClient.getSeconds()));
+      // Sync both date and time from NTP to RTC using Epoch Time
+      rtc.adjust(DateTime(timeClient.getEpochTime()));
       lastRTCsync = now;
-      Serial.println("RTC Synced");
+      Serial.println("RTC Synced from NTP: " + timeClient.getFormattedTime());
     }
   }
 
