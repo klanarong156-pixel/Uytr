@@ -199,40 +199,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ==================== MQTT CONNECT ====================
     function connectMQTT() {
+        if (mqttClient) {
+            try { mqttClient.end(); } catch (e) {}
+        }
+
         setConnStatus("เชื่อมต่อ...", "connecting");
 
-        mqttClient = mqtt.connect(MQTT_CONFIG.url, {
+        // HiveMQ Cloud requires specific options for browser connection
+        const options = {
             clientId: MQTT_CONFIG.clientId,
             username: MQTT_CONFIG.username,
             password: MQTT_CONFIG.password,
+            path: '/mqtt',         // Path is required for HiveMQ Cloud WebSockets
             clean: true,
-            reconnectPeriod: 0, // disable built-in reconnect
-            connectTimeout: 10000
-        });
+            connectTimeout: 10000,
+            reconnectPeriod: 5000,
+            protocolVersion: 4,
+            keepalive: 60
+        };
+
+        console.log("Connecting to MQTT...", MQTT_CONFIG.url);
+        // We use the full URL but also pass path in options for redundancy
+        mqttClient = mqtt.connect(MQTT_CONFIG.url, options);
 
         mqttClient.on("connect", () => {
-            reconnectAttempts = 0;
             setConnStatus("เชื่อมต่อแล้ว", "connected");
             mqttClient.subscribe("smartfarm/#");
             showToast("เชื่อมต่อ MQTT สำเร็จ", "success");
             addActivity("เชื่อมต่อ MQTT สำเร็จ", "connection");
         });
 
+        mqttClient.on("reconnect", () => {
+            setConnStatus("กำลังลองใหม่...", "connecting");
+            addActivity("กำลังพยายามเชื่อมต่อใหม่...", "connection");
+        });
+
         mqttClient.on("offline", () => {
             setConnStatus("ออฟไลน์", "disconnected");
-            showToast("ขาดการเชื่อมต่อ MQTT", "error");
-            addActivity("ขาดการเชื่อมต่อ MQTT", "error");
-            scheduleReconnect();
         });
 
         mqttClient.on("error", (err) => {
             console.error("MQTT Error:", err);
             setConnStatus("เกิดข้อผิดพลาด", "disconnected");
+            showToast("MQTT Error: " + err.message, "error");
         });
 
         mqttClient.on("close", () => {
-            setConnStatus("ปิดการเชื่อมต่อ", "disconnected");
-            scheduleReconnect();
+            setConnStatus("ขาดการเชื่อมต่อ", "disconnected");
         });
 
         mqttClient.on("message", (topic, payload) => {
@@ -304,16 +317,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ==================== AUTO RECONNECT ====================
-    function scheduleReconnect() {
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectAttempts++;
-        const delay = Math.min(30000, 1000 * Math.pow(2, reconnectAttempts));
-        reconnectTimer = setTimeout(() => {
-            console.log(`Reconnecting... attempt ${reconnectAttempts}`);
-            connectMQTT();
-        }, delay);
-    }
 
     // ==================== RELAY TOGGLES ====================
     RELAYS.forEach(relay => {
