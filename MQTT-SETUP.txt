@@ -1,9 +1,9 @@
-TEST MQTT SETTINGS
-const char DEFAULT_MQTT_HOST[] = "650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud";
-const uint16_t DEFAULT_MQTT_PORT = 8883;
-const char DEFAULT_MQTT_USER[] = "smartfarm";
-const char DEFAULT_MQTT_PASS[] = "Kla12345";
-const char MQTT_BASE[] = "smartfarm";
+SMART FARM MQTT SETTINGS (HIVEMQ CLOUD)
+Broker: 650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud
+ESP8266: SSL/TLS Port 8883
+GitHub Pages: WSS Port 8884 /mqtt
+Username: smartfarm
+Password: Kla12345
 
-This public broker is for testing only.
-For a real farm installation, use a private authenticated broker.
+This is a private authenticated broker on HiveMQ Cloud.
+Ensure SSL/TLS is enabled on ESP8266 (WiFiClientSecure).

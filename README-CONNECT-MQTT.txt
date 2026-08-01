@@ -1,16 +1,16 @@
-SMART FARM - MQTT CONNECTED (TEST MODE)
+SMART FARM - MQTT CONNECTED (PRODUCTION MODE)
 
 MQTT Broker:
-  Host: broker.hivemq.com
-  ESP8266 TCP port: 1883
-  Dashboard WebSocket Secure: wss://broker.hivemq.com:8884/mqtt
+  Host: 650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud
+  ESP8266 SSL port: 8883
+  Dashboard WebSocket Secure: wss://650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud:8884/mqtt
 
-No username/password is used for this public test broker.
+Authentication:
+  Username: smartfarm
+  Password: Kla12345
 
 IMPORTANT:
-This is a PUBLIC MQTT broker. Do NOT use it for private/security-sensitive
-data or a production irrigation system. Use a private authenticated broker
-(HiveMQ Cloud or your own broker) for production.
+This is a private authenticated broker. Data is secured via SSL/TLS.
 
 Dashboard topics:
   smartfarm/status/online

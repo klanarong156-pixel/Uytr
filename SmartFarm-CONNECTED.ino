@@ -6,13 +6,28 @@
 #include <ArduinoJson.h>
 #include <ArduinoOTA.h>
 #include <LittleFS.h>
+#include <WiFiClientSecure.h>
 
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
-// TEST MQTT BROKER — PUBLIC. Use a private authenticated broker for production.
-const char* mqtt_server = "broker.hivemq.com";
-const int mqtt_port = 1883;
+// Function Prototypes
+void setup_wifi();
+void reconnect_mqtt();
+void callback(char* topic, byte* payload, unsigned int length);
+void publishRelayStatus(int pin, const char* topic);
+void publishSettings();
+void saveConfig();
+void loadConfig();
+void publishSensorData();
+void handleScheduledTasks();
+bool parseTime(const String& value, int& hour, int& minute);
+
+// MQTT Broker details
+const char* mqtt_server = "650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud";
+const int mqtt_port = 8883;
+const char* mqtt_user = "smartfarm";
+const char* mqtt_pass = "Kla12345";
 const char* mqtt_client_id = "ESP8266SmartFarm";
 
 #define DHTPIN D2
@@ -24,7 +39,7 @@ DHT dht(DHTPIN, DHTTYPE);
 #define RELAY_LIGHT_HOME D6
 #define RELAY_LIGHT_SALA D7
 
-WiFiClient espClient;
+WiFiClientSecure espClient;
 PubSubClient client(espClient);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 7 * 3600, 60000);
@@ -177,7 +192,7 @@ void reconnect_mqtt() {
   while (!client.connected()) {
     Serial.print("MQTT connecting... ");
 
-    if (client.connect(mqtt_client_id,
+    if (client.connect(mqtt_client_id, mqtt_user, mqtt_pass,
                        "smartfarm/status/online", 0, true, "false")) {
       Serial.println("OK");
 
@@ -231,6 +246,9 @@ void handleScheduledTasks() {
 
 void setup() {
   Serial.begin(115200);
+  
+  // Configure WiFiClientSecure for HiveMQ Cloud
+  espClient.setInsecure();
 
   pinMode(RELAY_PUMP, OUTPUT);
   pinMode(RELAY_ZONE1, OUTPUT);

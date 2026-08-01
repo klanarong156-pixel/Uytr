@@ -18,14 +18,29 @@ const char* telegramHost = "api.telegram.org";
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
+// Function Prototypes
+void sendTelegramMessage(String message);
+void publishSettings();
+void reconnect_mqtt();
+void callback(char* topic, byte* payload, unsigned int length);
+void setup_wifi();
+void setup_ota();
+void publishSensorData();
+void handleScheduledTasks();
+void saveConfig();
+void loadConfig();
+void publishRelayStatus(int relayPin, const char* topic);
+
 // MQTT Broker details
-const char* mqtt_server = "YOUR_MQTT_BROKER_IP";
-const int mqtt_port = 1883;
+const char* mqtt_server = "650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud";
+const int mqtt_port = 8883;
+const char* mqtt_user = "smartfarm";
+const char* mqtt_pass = "Kla12345";
 const char* mqtt_client_id = "ESP8266SmartFarm";
 
-// Telegram Bot details (replace with your bot token and chat ID)
-#define BOT_TOKEN "YOUR_TELEGRAM_BOT_TOKEN"
-#define CHAT_ID "YOUR_TELEGRAM_CHAT_ID"
+// Telegram Bot details
+#define BOT_TOKEN "8667185180:AAEaPMQFRUW7AhqgSFdMgMdzzZTAY4OIbjw"
+#define CHAT_ID "8698930095"
 
 // DHT11 sensor details
 #define DHTPIN D2     // GPIO4
@@ -38,7 +53,7 @@ DHT dht(DHTPIN, DHTTYPE);
 #define RELAY_LIGHT_HOME D6 // GPIO12
 #define RELAY_LIGHT_SALA D7 // GPIO13
 
-WiFiClient espClient;
+WiFiClientSecure espClient;
 PubSubClient client(espClient);
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 7 * 3600, 60000);
@@ -66,19 +81,28 @@ void setup_wifi() {
   Serial.println("WiFi connected");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
+  
+  // Configure WiFiClientSecure to use insecure mode (no certificate check) for HiveMQ Cloud
+  espClient.setInsecure();
 }
 
 void reconnect_mqtt() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect(mqtt_client_id)) {
+    if (client.connect(mqtt_client_id, mqtt_user, mqtt_pass,
+                       "smartfarm/status/online", 0, true, "false")) {
       Serial.println("connected");
       // Subscribe to topics
       client.subscribe("smartfarm/relay/pump/set");
       client.subscribe("smartfarm/relay/zone1/set");
       client.subscribe("smartfarm/relay/lighthome/set");
       client.subscribe("smartfarm/relay/lightsala/set");
-      client.publish("smartfarm/status/online", "true");
+      client.subscribe("smartfarm/mode/set");
+      client.subscribe("smartfarm/schedule/pump/set");
+      
+      client.publish("smartfarm/status/online", "true", true);
+      sendTelegramMessage("ESP Online");
+      publishSettings();
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -327,28 +351,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
-// Update reconnect_mqtt to send offline status
-void reconnect_mqtt() {
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    if (client.connect(mqtt_client_id, "smartfarm/status/online", 0, true, "false")) { // Last Will and Testament
-      Serial.println("connected");
-      // Subscribe to topics
-      client.subscribe("smartfarm/relay/pump/set");
-      client.subscribe("smartfarm/relay/zone1/set");
-      client.subscribe("smartfarm/relay/lighthome/set");
-      client.subscribe("smartfarm/relay/lightsala/set");
-      client.subscribe("smartfarm/mode/set");
-      client.publish("smartfarm/status/online", "true", true);
-      sendTelegramMessage("ESP Online");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
-    }
-  }
-}
+// MQTT reconnection handled above
 
 // Add a global variable for current mode and relay schedules
 enum OperatingMode { MANUAL, AUTO };

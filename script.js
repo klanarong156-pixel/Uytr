@@ -7,9 +7,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // The ESP8266 can use normal MQTT TCP (usually port 1883).
     // ============================================================
     const MQTT_CONFIG = {
-        url: "wss://broker.hivemq.com:8884/mqtt",
-        username: "",
-        password: "",
+        url: "wss://650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud:8884/mqtt",
+        username: "smartfarm",
+        password: "Kla12345",
         clientId: "SmartFarmWeb-" + Math.random().toString(16).slice(2)
     };
 
