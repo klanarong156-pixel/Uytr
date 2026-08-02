@@ -54,11 +54,33 @@ RelaySchedule lightSalaSchedule = {false, 0, 0, 0, 0};
 unsigned long lastSensorRead = 0;
 unsigned long lastStatusUpdate = 0;
 unsigned long lastRTCsync = 0;
+bool rtcInitialized = false; // Track if RTC has been successfully initialized
 const long sensorInterval = 30000;
 const long statusInterval = 2000; 
 const long rtcSyncInterval = 3600000; 
 
 // ==================== Functions ====================
+
+DateTime getValidatedDateTime() {
+  // Try NTP first
+  if (WiFi.status() == WL_CONNECTED && timeClient.update()) {
+    DateTime ntpTime(timeClient.getEpochTime());
+    if (ntpTime.year() > 2020) { // Basic validation for NTP time
+      return ntpTime;
+    }
+  }
+
+  // Fallback to RTC if NTP is not available or invalid
+  if (rtcInitialized) {
+    DateTime rtcTime = rtc.now();
+    if (rtcTime.year() > 2020) { // Basic validation for RTC time
+      return rtcTime;
+    }
+  }
+
+  // If both fail, return a default/invalid DateTime (e.g., epoch 0)
+  return DateTime(0);
+}
 
 void publishRelayStatus() {
   if (!client.connected()) return;
@@ -207,7 +229,8 @@ void reconnect_mqtt() {
 
 void handleScheduledTasks() {
   if (currentMode != AUTO) return;
-  DateTime now = rtc.now();
+  DateTime now = getValidatedDateTime();
+  if (now.year() < 2020) return; // Don't run schedule with invalid time
   int h = now.hour();
   int m = now.minute();
   static int lastM = -1;
@@ -244,7 +267,18 @@ void setup() {
 
   dht.begin();
   Wire.begin(D2, D1);
-  if (!rtc.begin()) Serial.println("RTC Not Found");
+  if (!rtc.begin()) {
+    Serial.println("RTC Not Found or failed to start.");
+    rtcInitialized = false;
+  } else {
+    Serial.println("RTC Found and started.");
+    rtcInitialized = true;
+    // Check if RTC time is valid, if not, force sync on first loop
+    if (rtc.now().year() < 2020) {
+      Serial.println("RTC time is invalid, forcing immediate NTP sync.");
+      lastRTCsync = 0; // Force immediate sync
+    }
+  }
 
   WiFiManager wm;
   // wm.resetSettings(); // ปลดคอมเมนต์หากต้องการล้างค่า WiFi เดิม
@@ -280,10 +314,14 @@ void loop() {
   if (now - lastStatusUpdate > statusInterval) {
     lastStatusUpdate = now;
     if (client.connected()) {
-      DateTime rtcNow = rtc.now();
-      char buf[32];
-      sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d", rtcNow.year(), rtcNow.month(), rtcNow.day(), rtcNow.hour(), rtcNow.minute(), rtcNow.second());
-      client.publish("smartfarm/time", buf);
+      DateTime currentTime = getValidatedDateTime();
+      if (currentTime.year() > 2020) { // Only publish if time is valid
+        char buf[32];
+        sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d", currentTime.year(), currentTime.month(), currentTime.day(), currentTime.hour(), currentTime.minute(), currentTime.second());
+        client.publish("smartfarm/time", buf);
+      } else {
+        Serial.println("Warning: Invalid time, not publishing.");
+      }
     }
   }
 
@@ -304,9 +342,15 @@ void loop() {
   if (now - lastRTCsync > rtcSyncInterval || lastRTCsync == 0) {
     if (WiFi.status() == WL_CONNECTED && timeClient.update()) {
       // Sync both date and time from NTP to RTC using Epoch Time
-      rtc.adjust(DateTime(timeClient.getEpochTime()));
-      lastRTCsync = now;
-      Serial.println("RTC Synced from NTP: " + timeClient.getFormattedTime());
+      DateTime ntpTime(timeClient.getEpochTime());
+      if (ntpTime.year() > 2020) {
+        rtc.adjust(ntpTime);
+        lastRTCsync = now;
+        Serial.println("RTC Synced from NTP: " + timeClient.getFormattedTime());
+        rtcInitialized = true; // Confirm RTC is now holding a valid time
+      } else {
+        Serial.println("NTP time is invalid, not syncing RTC.");
+      }
     }
   }
 
