@@ -62,10 +62,11 @@ const long rtcSyncInterval = 3600000;
 // ==================== Functions ====================
 
 DateTime getValidatedDateTime() {
-  // Try NTP first
-  if (WiFi.status() == WL_CONNECTED && timeClient.update()) {
-    DateTime ntpTime((uint32_t)timeClient.getEpochTime());
-    if (ntpTime.year() > 2020) { // Basic validation for NTP time
+  // Try NTP first - check if timeClient has a valid time
+  if (WiFi.status() == WL_CONNECTED) {
+    uint32_t epoch = timeClient.getEpochTime();
+    DateTime ntpTime(epoch);
+    if (ntpTime.year() > 2020) { 
       return ntpTime;
     }
   }
@@ -73,12 +74,11 @@ DateTime getValidatedDateTime() {
   // Fallback to RTC if NTP is not available or invalid
   if (rtcInitialized) {
     DateTime rtcTime = rtc.now();
-    if (rtcTime.year() > 2020) { // Basic validation for RTC time
+    if (rtcTime.year() > 2020) {
       return rtcTime;
     }
   }
 
-  // If both fail, return a default/invalid DateTime (e.g., epoch 0)
   return DateTime((uint32_t)0);
 }
 

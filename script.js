@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let activityLog = [];
     let reconnectAttempts = 0;
     let reconnectTimer = null;
+    let deviceTimeOffset = 0; // Difference between device time and local time
+    let lastDeviceTime = null;
 
     const $ = id => document.getElementById(id);
 
@@ -197,6 +199,30 @@ document.addEventListener("DOMContentLoaded", () => {
         addActivity(`${action}อุปกรณ์ทั้งหมด`, "relay");
     };
 
+    // ==================== REAL-TIME CLOCK ====================
+    function startLocalClock() {
+        setInterval(() => {
+            const now = new Date();
+            if (lastDeviceTime) {
+                // If we have device time, we can show a "synced" clock
+                // For now, let's just update the UI every second
+                const displayTime = new Date(now.getTime() + deviceTimeOffset);
+                const timeStr = displayTime.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+                const dateStr = displayTime.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
+                
+                $("currentTime").innerHTML = `<span class="font-mono">${timeStr}</span>`;
+                $("currentDate").textContent = dateStr;
+            } else {
+                // Fallback to browser time if no device time yet
+                const timeStr = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+                const dateStr = now.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
+                $("currentTime").innerHTML = `<span class="font-mono">${timeStr}</span>`;
+                $("currentDate").textContent = dateStr;
+            }
+        }, 1000);
+    }
+    startLocalClock();
+
     // ==================== MQTT CONNECT ====================
     function connectMQTT() {
         if (mqttClient) {
@@ -256,6 +282,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (topic === "smartfarm/time") {
                     const parts = message.split(" ");
                     if (parts.length === 2) {
+                        // Sync local clock with device time
+                        const [year, month, day] = parts[0].split("-").map(Number);
+                        const [hour, min, sec] = parts[1].split(":").map(Number);
+                        const deviceTime = new Date(year, month - 1, day, hour, min, sec);
+                        const localTime = new Date();
+                        deviceTimeOffset = deviceTime.getTime() - localTime.getTime();
+                        lastDeviceTime = deviceTime;
+                        
                         $("currentTime").innerHTML = `<span class="font-mono">${parts[1]}</span>`;
                         $("currentDate").textContent = parts[0];
                     }
