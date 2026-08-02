@@ -64,7 +64,7 @@ const long rtcSyncInterval = 3600000;
 DateTime getValidatedDateTime() {
   // Try NTP first
   if (WiFi.status() == WL_CONNECTED && timeClient.update()) {
-    DateTime ntpTime(timeClient.getEpochTime());
+    DateTime ntpTime((uint32_t)timeClient.getEpochTime());
     if (ntpTime.year() > 2020) { // Basic validation for NTP time
       return ntpTime;
     }
@@ -79,7 +79,7 @@ DateTime getValidatedDateTime() {
   }
 
   // If both fail, return a default/invalid DateTime (e.g., epoch 0)
-  return DateTime(0);
+  return DateTime((uint32_t)0);
 }
 
 void publishRelayStatus() {
@@ -342,7 +342,7 @@ void loop() {
   if (now - lastRTCsync > rtcSyncInterval || lastRTCsync == 0) {
     if (WiFi.status() == WL_CONNECTED && timeClient.update()) {
       // Sync both date and time from NTP to RTC using Epoch Time
-      DateTime ntpTime(timeClient.getEpochTime());
+      DateTime ntpTime((uint32_t)timeClient.getEpochTime());
       if (ntpTime.year() > 2020) {
         rtc.adjust(ntpTime);
         lastRTCsync = now;
