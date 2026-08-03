@@ -521,16 +521,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Hide Splash Screen
-    window.addEventListener('load', () => {
+    let splashHidden = false;
+    const hideSplash = () => {
+        if (splashHidden) return;
+        splashHidden = true;
         const splash = document.getElementById('splash-screen');
         if (splash) {
+            splash.classList.add('fade-out');
             setTimeout(() => {
-                splash.classList.add('fade-out');
-                setTimeout(() => {
-                    splash.style.display = 'none';
-                }, 500);
-            }, 2000);
+                splash.style.display = 'none';
+            }, 500);
         }
+    };
+
+    // Hide splash on window load (normal path) after 2s delay
+    window.addEventListener('load', () => {
+        setTimeout(hideSplash, 2000);
     });
+
+    // Fallback: hide splash after 6s even if window.load never fires
+    // (covers cases where CDN fonts/scripts stall indefinitely)
+    setTimeout(() => {
+        if (!splashHidden) hideSplash();
+    }, 6000);
 
 });

@@ -47,6 +47,14 @@
             }
         }
     </script>
+    <!-- Safety Splash Timeout (runs inline before any external script) -->
+    <script>
+        // Force-hide splash after 8 seconds no matter what
+        setTimeout(() => {
+            const s = document.getElementById('splash-screen');
+            if (s) { s.classList.add('fade-out'); setTimeout(() => { s.style.display = 'none'; }, 500); }
+        }, 8000);
+    </script>
     <style>
         * { font-family: 'Kanit', sans-serif; }
         
@@ -517,6 +525,18 @@
         <div class="splash-loader"></div>
         <p class="mt-6 text-emerald-400 font-medium tracking-widest text-xs uppercase">สวนลุงนะ Smart Farm</p>
     </div>
+
+    <!-- Inline splash fallback (ensures splash hides even if external scripts fail) -->
+    <script>
+        // Double-safety: hide splash 10s after body parsed
+        setTimeout(() => {
+            var s = document.getElementById('splash-screen');
+            if (s && !s.classList.contains('fade-out')) {
+                s.classList.add('fade-out');
+                setTimeout(function() { s.style.display = 'none'; }, 500);
+            }
+        }, 10000);
+    </script>
 
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none"></div>
