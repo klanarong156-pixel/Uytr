@@ -6,6 +6,7 @@
     <title>Smart Farm Dashboard - สวนลุงนะ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -25,6 +26,8 @@
         * { font-family: 'Kanit', sans-serif; }
         .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); }
         .dark .glass { background: rgba(30,41,59,0.85); border: 1px solid rgba(255,255,255,0.08); }
+        .glass-strong { background: rgba(255,255,255,0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.4); }
+        .dark .glass-strong { background: rgba(30,41,59,0.95); border: 1px solid rgba(255,255,255,0.12); }
         .toggle-wrap input:checked + .toggle-track { background-color: #10b981; }
         .toggle-wrap input:checked + .toggle-track .toggle-thumb { transform: translateX(100%); }
         .gauge-bg { stroke-dasharray: 251; stroke-dashoffset: 251; transition: stroke-dashoffset 1s ease; }
@@ -41,300 +44,301 @@
         .dark input[type="time"] { color-scheme: dark; }
         .fade-in { animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }
+        .pulse-dot { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .gradient-text { background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .sensor-card { position: relative; overflow: hidden; }
+        .sensor-card::before { content: ''; position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); pointer-events: none; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 min-h-screen pb-16 transition-colors duration-300">
+<body class="bg-gradient-to-br from-slate-50 via-emerald-50 to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-slate-800 dark:text-slate-200 min-h-screen pb-20 transition-colors duration-300">
 
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none"></div>
 
     <!-- Header -->
-    <header class="glass sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-full overflow-hidden border-2 border-emerald-500 shadow-md">
+    <header class="glass-strong sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full overflow-hidden border-3 border-emerald-500 shadow-lg hover:shadow-xl transition-shadow">
                     <img src="logo.png" alt="Logo" class="w-full h-full object-cover">
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">สวนลุงนะ</h1>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400">อย่าทำเฒ่า บ่าวทำโถก</p>
+                    <h1 class="text-2xl font-bold gradient-text leading-tight">สวนลุงนะ</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Smart Farm Control System</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
+                <!-- Settings Button -->
+                <button id="settingsBtn" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="ตั้งค่า">
+                    <i data-lucide="settings" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
+                </button>
                 <!-- Dark Mode Toggle -->
-                <button id="darkModeBtn" class="w-9 h-9 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="เปลี่ยนโหมดมืด">
-                    <i data-lucide="moon" class="w-4 h-4 text-slate-600 dark:text-slate-400"></i>
+                <button id="darkModeBtn" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="เปลี่ยนโหมดมืด">
+                    <i data-lucide="moon" class="w-5 h-5 text-slate-600 dark:text-slate-400"></i>
                 </button>
                 <!-- Connection Status -->
-                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                    <span id="connDot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                    <span id="connText" class="text-xs font-medium text-amber-600 dark:text-amber-400">เชื่อมต่อ...</span>
+                <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600">
+                    <span id="connDot" class="w-3 h-3 rounded-full bg-amber-400 pulse-dot"></span>
+                    <span id="connText" class="text-xs font-semibold text-amber-600 dark:text-amber-400">เชื่อมต่อ...</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 mt-5 space-y-5">
+    <main class="max-w-7xl mx-auto px-4 mt-6 space-y-6">
 
-        <!-- Sensor Cards -->
-        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Temperature -->
-            <div class="glass rounded-2xl p-4 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-orange-100 dark:bg-orange-900/20 rounded-full -mr-8 -mt-8 opacity-50"></div>
+        <!-- Status Overview -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Temperature Card -->
+            <div class="glass card-hover sensor-card rounded-3xl p-6 shadow-md">
                 <div class="relative">
-                    <div class="flex items-center gap-2 mb-3">
-                        <i data-lucide="thermometer" class="w-5 h-5 text-orange-500"></i>
-                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">อุณหภูมิ</span>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 flex items-center justify-center">
+                                <i data-lucide="thermometer" class="w-6 h-6 text-orange-500"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">อุณหภูมิ</span>
+                        </div>
                     </div>
-                    <div class="flex items-end gap-1">
-                        <span id="temperature" class="text-4xl font-bold text-slate-800 dark:text-white">--</span>
-                        <span class="text-lg text-slate-400 mb-1">°C</span>
+                    <div class="flex items-end gap-2 mb-4">
+                        <span id="temperature" class="text-5xl font-bold gradient-text">--</span>
+                        <span class="text-xl text-slate-400 mb-2">°C</span>
                     </div>
-                    <div id="tempBar" class="mt-2 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-blue-400 via-green-400 to-red-400 rounded-full transition-all duration-700" style="width:0%"></div>
+                    <div id="tempBar" class="mt-3 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-blue-400 via-green-400 to-red-500 rounded-full transition-all duration-700" style="width:0%"></div>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1">อัปเดต: <span id="tempTime">--</span></p>
+                    <p class="text-xs text-slate-400 mt-3">อัปเดต: <span id="tempTime" class="font-mono">--</span></p>
                 </div>
             </div>
 
-            <!-- Humidity -->
-            <div class="glass rounded-2xl p-4 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-blue-100 dark:bg-blue-900/20 rounded-full -mr-8 -mt-8 opacity-50"></div>
+            <!-- Humidity Card -->
+            <div class="glass card-hover sensor-card rounded-3xl p-6 shadow-md">
                 <div class="relative">
-                    <div class="flex items-center gap-2 mb-3">
-                        <i data-lucide="droplets" class="w-5 h-5 text-blue-500"></i>
-                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ความชื้น</span>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 flex items-center justify-center">
+                                <i data-lucide="droplets" class="w-6 h-6 text-blue-500"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">ความชื้น</span>
+                        </div>
                     </div>
-                    <div class="flex items-end gap-1">
-                        <span id="humidity" class="text-4xl font-bold text-slate-800 dark:text-white">--</span>
-                        <span class="text-lg text-slate-400 mb-1">%</span>
+                    <div class="flex items-end gap-2 mb-4">
+                        <span id="humidity" class="text-5xl font-bold gradient-text">--</span>
+                        <span class="text-xl text-slate-400 mb-2">%</span>
                     </div>
-                    <div id="humBar" class="mt-2 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div id="humBar" class="mt-3 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div class="h-full bg-gradient-to-r from-yellow-300 via-blue-400 to-blue-600 rounded-full transition-all duration-700" style="width:0%"></div>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1">อัปเดต: <span id="humTime">--</span></p>
+                    <p class="text-xs text-slate-400 mt-3">อัปเดต: <span id="humTime" class="font-mono">--</span></p>
                 </div>
             </div>
 
-            <!-- Device Status -->
-            <div class="glass rounded-2xl p-4 shadow-sm">
-                <div class="flex items-center gap-2 mb-3">
-                    <i data-lucide="cpu" class="w-5 h-5 text-emerald-500"></i>
-                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">อุปกรณ์</span>
+            <!-- Device Status Card -->
+            <div class="glass card-hover rounded-3xl p-6 shadow-md">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/30 dark:to-green-900/30 flex items-center justify-center">
+                        <i data-lucide="cpu" class="w-6 h-6 text-emerald-500"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">อุปกรณ์</span>
                 </div>
-                <div class="flex items-center gap-2 mb-2">
-                    <span id="espDot" class="w-3 h-3 rounded-full bg-rose-400"></span>
-                    <span id="espStatus" class="text-lg font-bold text-rose-500">Offline</span>
+                <div class="flex items-center gap-3 mb-3">
+                    <span id="espDot" class="w-4 h-4 rounded-full bg-rose-400 pulse-dot"></span>
+                    <span id="espStatus" class="text-2xl font-bold text-rose-500">Offline</span>
                 </div>
-                <p class="text-[10px] text-slate-400">อุปกรณ์ ESP8266</p>
+                <p class="text-xs text-slate-400">ESP8266 IoT Module</p>
             </div>
 
-            <!-- Time & Mode -->
-            <div class="glass rounded-2xl p-4 shadow-sm">
-                <div class="flex items-center gap-2 mb-3">
-                    <i data-lucide="clock" class="w-5 h-5 text-purple-500"></i>
-                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">เวลา / โหมด</span>
+            <!-- Time & Mode Card -->
+            <div class="glass card-hover rounded-3xl p-6 shadow-md">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center">
+                        <i data-lucide="clock" class="w-6 h-6 text-purple-500"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">เวลา</span>
                 </div>
-                <div id="currentTime" class="text-xl font-bold text-slate-800 dark:text-white font-mono">--:--:--</div>
-                <div id="currentDate" class="text-[10px] text-slate-400">--</div>
-                <div class="mt-2 flex items-center gap-2">
+                <div id="currentTime" class="text-3xl font-bold text-slate-800 dark:text-white font-mono mb-2">--:--:--</div>
+                <div id="currentDate" class="text-xs text-slate-400 mb-3 font-mono">--</div>
+                <div class="flex items-center gap-2">
                     <span class="text-xs text-slate-500 dark:text-slate-400">โหมด:</span>
-                    <span id="currentMode" class="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">Manual</span>
+                    <span id="currentMode" class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">Manual</span>
                 </div>
             </div>
         </section>
 
-        <!-- Mode Switch -->
-        <section class="glass rounded-2xl p-4 shadow-sm">
+        <!-- Mode Switch Section -->
+        <section class="glass-strong card-hover rounded-3xl p-6 shadow-md">
             <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="settings-2" class="w-5 h-5 text-emerald-500"></i>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/30 dark:to-green-900/30 flex items-center justify-center">
+                        <i data-lucide="settings-2" class="w-6 h-6 text-emerald-500"></i>
+                    </div>
                     <div>
-                        <h2 class="text-sm font-semibold">โหมดการทำงาน</h2>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Manual = ควบคุมเอง, Auto = ใช้ตารางเวลา</p>
+                        <h2 class="text-lg font-semibold">โหมดการทำงาน</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Manual = ควบคุมเอง | Auto = ใช้ตารางเวลา</p>
                     </div>
                 </div>
-                <div class="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                    <button id="manualModeBtn" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all tab-active">Manual</button>
-                    <button id="autoModeBtn" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all text-slate-500 dark:text-slate-400">Auto</button>
+                <div class="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <button id="manualModeBtn" class="px-6 py-2 rounded-xl text-sm font-semibold transition-all tab-active">Manual</button>
+                    <button id="autoModeBtn" class="px-6 py-2 rounded-xl text-sm font-semibold transition-all text-slate-500 dark:text-slate-400">Auto</button>
                 </div>
             </div>
         </section>
 
         <!-- Quick Actions -->
-        <section class="glass rounded-2xl p-4 shadow-sm">
-            <div class="flex items-center gap-2 mb-3">
-                <i data-lucide="zap" class="w-4 h-4 text-yellow-500"></i>
-                <h2 class="text-sm font-semibold">ควบคุมด่วน</h2>
+        <section class="glass-strong card-hover rounded-3xl p-6 shadow-md">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-100 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/30 flex items-center justify-center">
+                    <i data-lucide="zap" class="w-5 h-5 text-yellow-500"></i>
+                </div>
+                <h2 class="text-lg font-semibold">ควบคุมด่วน</h2>
             </div>
-            <div class="flex gap-2">
-                <button onclick="allRelays(true)" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
-                    <i data-lucide="power" class="w-3.5 h-3.5"></i> เปิดทั้งหมด
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="allRelays(true)" class="py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-sm font-bold transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg">
+                    <i data-lucide="power" class="w-4 h-4"></i> เปิดทั้งหมด
                 </button>
-                <button onclick="allRelays(false)" class="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
-                    <i data-lucide="power-off" class="w-3.5 h-3.5"></i> ปิดทั้งหมด
+                <button onclick="allRelays(false)" class="py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white text-sm font-bold transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-lg">
+                    <i data-lucide="power-off" class="w-4 h-4"></i> ปิดทั้งหมด
                 </button>
             </div>
         </section>
 
         <!-- Relay Controls -->
         <section>
-            <h2 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-500"></i>
-                ควบคุมอุปกรณ์
-            </h2>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center">
+                    <i data-lucide="sliders-horizontal" class="w-5 h-5 text-blue-500"></i>
+                </div>
+                <h2 class="text-lg font-semibold">ควบคุมอุปกรณ์</h2>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Pump -->
-                <div id="card-pump" class="glass rounded-2xl p-4 shadow-sm transition-all duration-200 hover:shadow-md">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                            <i data-lucide="waves" class="w-5 h-5 text-blue-500"></i>
+                <div id="card-pump" class="glass card-hover rounded-3xl p-5 shadow-md transition-all duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 flex items-center justify-center">
+                            <i data-lucide="waves" class="w-6 h-6 text-blue-500"></i>
                         </div>
                         <div class="toggle-wrap relative">
                             <input type="checkbox" id="pumpToggle" class="sr-only">
-                            <label for="pumpToggle" class="toggle-track flex w-11 h-6 bg-slate-200 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
-                                <span class="toggle-thumb w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 block"></span>
+                            <label for="pumpToggle" class="toggle-track flex w-12 h-7 bg-slate-300 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
+                                <span class="toggle-thumb w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 block"></span>
                             </label>
                         </div>
                     </div>
-                    <h3 class="font-semibold text-sm text-slate-800 dark:text-white">ปั๊มน้ำ</h3>
-                    <p id="pumpStatusText" class="text-xs text-slate-400">ปิด</p>
+                    <h3 class="font-bold text-base text-slate-800 dark:text-white mb-1">ปั๊มน้ำ</h3>
+                    <p id="pumpStatusText" class="text-xs font-semibold text-slate-400">ปิด</p>
                 </div>
 
                 <!-- Zone 1 -->
-                <div id="card-zone1" class="glass rounded-2xl p-4 shadow-sm transition-all duration-200 hover:shadow-md">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                            <i data-lucide="sprout" class="w-5 h-5 text-emerald-500"></i>
+                <div id="card-zone1" class="glass card-hover rounded-3xl p-5 shadow-md transition-all duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-900/30 dark:to-green-900/30 flex items-center justify-center">
+                            <i data-lucide="sprout" class="w-6 h-6 text-emerald-500"></i>
                         </div>
                         <div class="toggle-wrap relative">
                             <input type="checkbox" id="zone1Toggle" class="sr-only">
-                            <label for="zone1Toggle" class="toggle-track flex w-11 h-6 bg-slate-200 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
-                                <span class="toggle-thumb w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 block"></span>
+                            <label for="zone1Toggle" class="toggle-track flex w-12 h-7 bg-slate-300 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
+                                <span class="toggle-thumb w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 block"></span>
                             </label>
                         </div>
                     </div>
-                    <h3 class="font-semibold text-sm text-slate-800 dark:text-white">โซน 1</h3>
-                    <p id="zone1StatusText" class="text-xs text-slate-400">ปิด</p>
+                    <h3 class="font-bold text-base text-slate-800 dark:text-white mb-1">โซน 1</h3>
+                    <p id="zone1StatusText" class="text-xs font-semibold text-slate-400">ปิด</p>
                 </div>
 
                 <!-- Light Home -->
-                <div id="card-lighthome" class="glass rounded-2xl p-4 shadow-sm transition-all duration-200 hover:shadow-md">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
-                            <i data-lucide="home" class="w-5 h-5 text-orange-500"></i>
+                <div id="card-lighthome" class="glass card-hover rounded-3xl p-5 shadow-md transition-all duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 flex items-center justify-center">
+                            <i data-lucide="home" class="w-6 h-6 text-orange-500"></i>
                         </div>
                         <div class="toggle-wrap relative">
                             <input type="checkbox" id="lighthomeToggle" class="sr-only">
-                            <label for="lighthomeToggle" class="toggle-track flex w-11 h-6 bg-slate-200 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
-                                <span class="toggle-thumb w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 block"></span>
+                            <label for="lighthomeToggle" class="toggle-track flex w-12 h-7 bg-slate-300 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
+                                <span class="toggle-thumb w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 block"></span>
                             </label>
                         </div>
                     </div>
-                    <h3 class="font-semibold text-sm text-slate-800 dark:text-white">ไฟบ้าน</h3>
-                    <p id="lighthomeStatusText" class="text-xs text-slate-400">ปิด</p>
+                    <h3 class="font-bold text-base text-slate-800 dark:text-white mb-1">ไฟบ้าน</h3>
+                    <p id="lighthomeStatusText" class="text-xs font-semibold text-slate-400">ปิด</p>
                 </div>
 
                 <!-- Light Sala -->
-                <div id="card-lightsala" class="glass rounded-2xl p-4 shadow-sm transition-all duration-200 hover:shadow-md">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
-                            <i data-lucide="palmtree" class="w-5 h-5 text-amber-500"></i>
+                <div id="card-lightsala" class="glass card-hover rounded-3xl p-5 shadow-md transition-all duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 flex items-center justify-center">
+                            <i data-lucide="lightbulb" class="w-6 h-6 text-amber-500"></i>
                         </div>
                         <div class="toggle-wrap relative">
                             <input type="checkbox" id="lightsalaToggle" class="sr-only">
-                            <label for="lightsalaToggle" class="toggle-track flex w-11 h-6 bg-slate-200 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
-                                <span class="toggle-thumb w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 block"></span>
+                            <label for="lightsalaToggle" class="toggle-track flex w-12 h-7 bg-slate-300 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
+                                <span class="toggle-thumb w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 block"></span>
                             </label>
                         </div>
                     </div>
-                    <h3 class="font-semibold text-sm text-slate-800 dark:text-white">ไฟศาลา</h3>
-                    <p id="lightsalaStatusText" class="text-xs text-slate-400">ปิด</p>
+                    <h3 class="font-bold text-base text-slate-800 dark:text-white mb-1">ไฟศาลา</h3>
+                    <p id="lightsalaStatusText" class="text-xs font-semibold text-slate-400">ปิด</p>
                 </div>
             </div>
         </section>
 
         <!-- Schedule Section -->
-        <section>
-            <h2 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                <i data-lucide="calendar-days" class="w-4 h-4 text-emerald-500"></i>
-                ตารางเวลา (โหมด Auto)
-            </h2>
-            <div class="glass rounded-2xl shadow-sm overflow-hidden">
-                <!-- Schedule Tabs -->
-                <div class="flex border-b border-slate-200 dark:border-slate-700">
-                    <button onclick="switchSchedTab('pump')" class="sched-tab flex-1 py-3 text-xs font-semibold text-center border-b-2 border-transparent transition-colors tab-active" data-tab="pump">
-                        <i data-lucide="waves" class="w-3.5 h-3.5 inline mr-1"></i>ปั๊มน้ำ
-                    </button>
-                    <button onclick="switchSchedTab('zone1')" class="sched-tab flex-1 py-3 text-xs font-semibold text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 transition-colors" data-tab="zone1">
-                        <i data-lucide="sprout" class="w-3.5 h-3.5 inline mr-1"></i>โซน 1
-                    </button>
-                    <button onclick="switchSchedTab('lighthome')" class="sched-tab flex-1 py-3 text-xs font-semibold text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 transition-colors" data-tab="lighthome">
-                        <i data-lucide="home" class="w-3.5 h-3.5 inline mr-1"></i>ไฟบ้าน
-                    </button>
-                    <button onclick="switchSchedTab('lightsala')" class="sched-tab flex-1 py-3 text-xs font-semibold text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 transition-colors" data-tab="lightsala">
-                        <i data-lucide="palmtree" class="w-3.5 h-3.5 inline mr-1"></i>ไฟศาลา
-                    </button>
+        <section class="glass-strong card-hover rounded-3xl p-6 shadow-md">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center">
+                    <i data-lucide="calendar" class="w-5 h-5 text-indigo-500"></i>
                 </div>
-
-                <!-- Schedule Content -->
-                <div id="schedContent" class="p-4 space-y-4 fade-in">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">เปิดใช้งานตารางเวลา</span>
-                        <label class="toggle-wrap relative">
-                            <input type="checkbox" id="schedEnable" class="sr-only">
-                            <label for="schedEnable" class="toggle-track flex w-11 h-6 bg-slate-200 dark:bg-slate-600 rounded-full cursor-pointer transition-colors p-0.5">
-                                <span class="toggle-thumb w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 block"></span>
-                            </label>
-                        </label>
+                <h2 class="text-lg font-semibold">ตั้งเวลาการทำงาน</h2>
+            </div>
+            <div class="flex gap-2 mb-5 overflow-x-auto pb-2">
+                <button class="sched-tab flex-1 py-3 text-xs font-bold text-center border-b-2 border-emerald-500 tab-active transition-colors" data-tab="pump">ปั๊มน้ำ</button>
+                <button class="sched-tab flex-1 py-3 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 transition-colors" data-tab="zone1">โซน 1</button>
+                <button class="sched-tab flex-1 py-3 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 transition-colors" data-tab="lighthome">ไฟบ้าน</button>
+                <button class="sched-tab flex-1 py-3 text-xs font-bold text-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 transition-colors" data-tab="lightsala">ไฟศาลา</button>
+            </div>
+            <div class="space-y-4">
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="schedEnable" class="w-5 h-5 rounded-lg border-2 border-slate-300 dark:border-slate-600 text-emerald-500 focus:ring-2 focus:ring-emerald-400">
+                        <span class="text-sm font-semibold">เปิดใช้งานตารางเวลา</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">เวลาเปิด</label>
+                        <input type="time" id="schedOn" class="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 transition-all">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">เวลาเปิด</label>
-                            <input type="time" id="schedOn" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent outline-none transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">เวลาปิด</label>
-                            <input type="time" id="schedOff" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent outline-none transition-all">
-                        </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">เวลาปิด</label>
+                        <input type="time" id="schedOff" class="w-full px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-400 transition-all">
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="saveSchedule()" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
-                            <i data-lucide="save" class="w-3.5 h-3.5"></i> บันทึก
-                        </button>
-                        <button onclick="deleteSchedule()" class="px-4 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ลบ
-                        </button>
-                    </div>
-                    <div id="schedSummary" class="text-center text-xs text-slate-400 dark:text-slate-500 py-2">
-                        ยังไม่ได้ตั้งค่าตารางเวลา
-                    </div>
+                </div>
+                <p id="schedSummary" class="text-xs text-slate-400 text-center py-2 italic">ยังไม่เปิดใช้งานตารางเวลา</p>
+                <div class="flex gap-3">
+                    <button onclick="saveSchedule()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-sm font-bold transition-all">บันทึก</button>
+                    <button onclick="deleteSchedule()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-slate-300 to-slate-400 dark:from-slate-700 dark:to-slate-600 hover:from-slate-400 hover:to-slate-500 text-slate-800 dark:text-white text-sm font-bold transition-all">ลบ</button>
                 </div>
             </div>
         </section>
 
         <!-- Activity Log -->
-        <section>
-            <h2 class="text-sm font-semibold mb-3 flex items-center gap-2">
-                <i data-lucide="activity" class="w-4 h-4 text-indigo-500"></i>
-                กิจกรรมล่าสุด
-            </h2>
-            <div class="glass rounded-2xl p-4 shadow-sm max-h-48 overflow-y-auto">
-                <div id="activityLog" class="space-y-2">
-                    <p class="text-xs text-slate-400 text-center py-4">ยังไม่มีกิจกรรม</p>
+        <section class="glass-strong card-hover rounded-3xl p-6 shadow-md">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-100 to-rose-100 dark:from-pink-900/30 dark:to-rose-900/30 flex items-center justify-center">
+                    <i data-lucide="history" class="w-5 h-5 text-pink-500"></i>
                 </div>
+                <h2 class="text-lg font-semibold">ประวัติกิจกรรม</h2>
+            </div>
+            <div id="activityLog" class="max-h-64 overflow-y-auto space-y-1 text-xs">
+                <p class="text-xs text-slate-400 text-center py-4">ยังไม่มีกิจกรรม</p>
             </div>
         </section>
 
     </main>
 
-    <footer class="mt-8 text-center text-slate-400 dark:text-slate-600 text-xs">
-        <p>&copy; 2026 สวนลุงนะ Smart Farm System - MQTT & RTC</p>
-    </footer>
-
-    <!-- Scripts -->
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://unpkg.com/mqtt@5.0.0/dist/mqtt.min.js"></script>
     <script src="script.js"></script>
-    <script>lucide.createIcons();</script>
 </body>
 </html>

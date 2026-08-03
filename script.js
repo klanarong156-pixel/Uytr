@@ -14,11 +14,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let mqttClient = null;
     let currentSchedTab = "pump";
-    let schedData = {}; // cache schedule data per relay
+    let schedData = {};
     let activityLog = [];
     let reconnectAttempts = 0;
     let reconnectTimer = null;
-    let deviceTimeOffset = 0; // Difference between device time and local time
+    let deviceTimeOffset = 0;
     let lastDeviceTime = null;
 
     const $ = id => document.getElementById(id);
@@ -28,12 +28,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = $("toastContainer");
         const toast = document.createElement("div");
         const colors = {
-            success: "bg-emerald-500", error: "bg-rose-500", info: "bg-blue-500",
-            warning: "bg-amber-500", dark: "bg-slate-700 dark:bg-slate-600"
+            success: "bg-gradient-to-r from-emerald-500 to-green-600",
+            error: "bg-gradient-to-r from-rose-500 to-red-600",
+            info: "bg-gradient-to-r from-blue-500 to-cyan-600",
+            warning: "bg-gradient-to-r from-amber-500 to-orange-600",
+            dark: "bg-slate-700 dark:bg-slate-600"
         };
-        toast.className = `toast-enter pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg text-white text-xs font-medium ${colors[type] || colors.info}`;
-        toast.textContent = message;
+        toast.className = `toast-enter pointer-events-auto px-5 py-3 rounded-2xl shadow-xl text-white text-sm font-semibold ${colors[type] || colors.info} flex items-center gap-2`;
+        
+        const icon = document.createElement("i");
+        icon.setAttribute("data-lucide", 
+            type === "success" ? "check-circle" :
+            type === "error" ? "alert-circle" :
+            type === "warning" ? "alert-triangle" : "info"
+        );
+        icon.className = "w-4 h-4";
+        
+        const textSpan = document.createElement("span");
+        textSpan.textContent = message;
+        
+        toast.appendChild(icon);
+        toast.appendChild(textSpan);
         container.appendChild(toast);
+        
+        lucide.createIcons();
+        
         setTimeout(() => {
             toast.className = toast.className.replace("toast-enter", "toast-exit");
             setTimeout(() => toast.remove(), 300);
@@ -45,11 +64,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const dot = $("connDot");
         const label = $("connText");
         label.textContent = text;
-        dot.className = "w-2.5 h-2.5 rounded-full " + (
+        dot.className = "w-3 h-3 rounded-full pulse-dot " + (
             status === "connected" ? "bg-emerald-400" :
-            status === "connecting" ? "bg-amber-400 animate-pulse" : "bg-rose-400"
+            status === "connecting" ? "bg-amber-400" : "bg-rose-400"
         );
-        label.className = "text-xs font-medium " + (
+        label.className = "text-xs font-semibold " + (
             status === "connected" ? "text-emerald-600 dark:text-emerald-400" :
             status === "connecting" ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"
         );
@@ -67,16 +86,30 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderActivityLog() {
         const container = $("activityLog");
         if (activityLog.length === 0) {
-            container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">ยังไม่มีกิจกรรม</p>';
+            container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">ยังไม่มีกิจกรรม</p>';
             return;
         }
-        const icons = { relay: "power", mode: "settings-2", sensor: "thermometer", schedule: "calendar", connection: "wifi", error: "alert-circle" };
+        const icons = { 
+            relay: "power", 
+            mode: "settings-2", 
+            sensor: "thermometer", 
+            schedule: "calendar", 
+            connection: "wifi", 
+            error: "alert-circle" 
+        };
         container.innerHTML = activityLog.slice(0, 20).map(a => {
             const icon = icons[a.type] || "info";
-            const colorMap = { relay: "text-emerald-500", mode: "text-purple-500", sensor: "text-blue-500", schedule: "text-amber-500", connection: "text-indigo-500", error: "text-rose-500" };
-            return `<div class="flex items-center gap-2 text-xs py-1 border-b border-slate-100 dark:border-slate-700 last:border-0">
-                <span class="text-slate-400 font-mono w-14">${a.time}</span>
-                <i data-lucide="${icon}" class="w-3 h-3 ${colorMap[a.type] || 'text-slate-400'}"></i>
+            const colorMap = { 
+                relay: "text-emerald-500", 
+                mode: "text-purple-500", 
+                sensor: "text-blue-500", 
+                schedule: "text-amber-500", 
+                connection: "text-indigo-500", 
+                error: "text-rose-500" 
+            };
+            return `<div class="flex items-center gap-3 text-xs py-2 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <span class="text-slate-400 font-mono w-16 flex-shrink-0">${a.time}</span>
+                <i data-lucide="${icon}" class="w-4 h-4 ${colorMap[a.type] || 'text-slate-400'} flex-shrink-0"></i>
                 <span class="text-slate-600 dark:text-slate-300 flex-1">${a.message}</span>
             </div>`;
         }).join("");
@@ -93,9 +126,11 @@ document.addEventListener("DOMContentLoaded", () => {
             $("temperature").textContent = value.toFixed(1);
             const pct = Math.min(100, Math.max(0, ((value + 10) / 60) * 100));
             bar.style.width = pct + "%";
+            addActivity(`อุณหภูมิ: ${value.toFixed(1)}°C`, "sensor");
         } else {
             $("humidity").textContent = value.toFixed(1);
             bar.style.width = Math.min(100, value) + "%";
+            addActivity(`ความชื้น: ${value.toFixed(1)}%`, "sensor");
         }
         timeEl.textContent = now;
     }
@@ -107,22 +142,26 @@ document.addEventListener("DOMContentLoaded", () => {
         if (toggle) toggle.checked = isOn;
         if (text) {
             text.textContent = isOn ? "เปิด" : "ปิด";
-            text.className = "text-xs font-medium " + (isOn ? "text-emerald-500" : "text-slate-400");
+            text.className = "text-xs font-semibold " + (isOn ? "text-emerald-500" : "text-slate-400");
         }
         const card = $(`card-${relay}`);
         if (card) {
-            card.style.borderColor = isOn ? "var(--tw-color-emerald-500)" : "";
-            card.classList.toggle("ring-1", isOn);
-            card.classList.toggle("ring-emerald-400/30", isOn);
+            if (isOn) {
+                card.classList.add("ring-2", "ring-emerald-400/50");
+                card.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.3)";
+            } else {
+                card.classList.remove("ring-2", "ring-emerald-400/50");
+                card.style.boxShadow = "";
+            }
         }
     }
 
     // ==================== MODE UPDATE ====================
     function updateMode(isAuto) {
         $("currentMode").textContent = isAuto ? "Auto" : "Manual";
-        $("currentMode").className = `px-2 py-0.5 rounded-full text-xs font-bold ${isAuto ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"}`;
-        $("manualModeBtn").className = isAuto ? "px-4 py-2 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all" : "px-4 py-2 rounded-lg text-xs font-semibold transition-all tab-active";
-        $("autoModeBtn").className = isAuto ? "px-4 py-2 rounded-lg text-xs font-semibold transition-all tab-active" : "px-4 py-2 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 transition-all";
+        $("currentMode").className = `px-3 py-1 rounded-full text-xs font-bold ${isAuto ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"}`;
+        $("manualModeBtn").className = isAuto ? "px-6 py-2 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 transition-all" : "px-6 py-2 rounded-xl text-sm font-semibold transition-all tab-active";
+        $("autoModeBtn").className = isAuto ? "px-6 py-2 rounded-xl text-sm font-semibold transition-all tab-active" : "px-6 py-2 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 transition-all";
     }
 
     // ==================== SCHEDULE TAB ====================
@@ -130,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentSchedTab = relay;
         document.querySelectorAll(".sched-tab").forEach(btn => {
             const isActive = btn.dataset.tab === relay;
-            btn.className = "sched-tab flex-1 py-3 text-xs font-semibold text-center border-b-2 transition-colors " +
+            btn.className = "sched-tab flex-1 py-3 text-xs font-bold text-center border-b-2 transition-colors " +
                 (isActive ? "border-emerald-500 tab-active" : "border-transparent text-slate-500 dark:text-slate-400");
         });
         const data = schedData[relay] || { enabled: false, on: "", off: "" };
@@ -143,9 +182,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateSchedSummary(relay, data) {
         const el = $("schedSummary");
         if (data.enabled && data.on && data.off) {
-            el.innerHTML = `<span class="text-emerald-500 font-medium">${RELAY_NAMES[relay]}</span> ตั้งเวลา <b>${data.on}</b> - <b>${data.off}</b>`;
+            el.innerHTML = `<span class="text-emerald-500 font-semibold">${RELAY_NAMES[relay]}</span> ตั้งเวลา <b class="text-slate-700 dark:text-slate-300">${data.on}</b> - <b class="text-slate-700 dark:text-slate-300">${data.off}</b>`;
         } else if (data.enabled) {
-            el.innerHTML = `<span class="text-amber-500">กำหนดเวลาเปิด/ปิดของ ${RELAY_NAMES[relay]}</span>`;
+            el.innerHTML = `<span class="text-amber-500 font-semibold">กำหนดเวลาเปิด/ปิดของ ${RELAY_NAMES[relay]}</span>`;
         } else {
             el.innerHTML = `<span class="text-slate-400">ยังไม่เปิดใช้งานตารางเวลาของ ${RELAY_NAMES[relay]}</span>`;
         }
@@ -204,8 +243,6 @@ document.addEventListener("DOMContentLoaded", () => {
         setInterval(() => {
             const now = new Date();
             if (lastDeviceTime) {
-                // If we have device time, we can show a "synced" clock
-                // For now, let's just update the UI every second
                 const displayTime = new Date(now.getTime() + deviceTimeOffset);
                 const timeStr = displayTime.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
                 const dateStr = displayTime.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
@@ -213,7 +250,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 $("currentTime").innerHTML = `<span class="font-mono">${timeStr}</span>`;
                 $("currentDate").textContent = dateStr;
             } else {
-                // Fallback to browser time if no device time yet
                 const timeStr = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
                 const dateStr = now.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
                 $("currentTime").innerHTML = `<span class="font-mono">${timeStr}</span>`;
@@ -231,12 +267,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setConnStatus("เชื่อมต่อ...", "connecting");
 
-        // HiveMQ Cloud requires specific options for browser connection
         const options = {
             clientId: MQTT_CONFIG.clientId,
             username: MQTT_CONFIG.username,
             password: MQTT_CONFIG.password,
-            path: '/mqtt',         // Path is required for HiveMQ Cloud WebSockets
+            path: '/mqtt',
             clean: true,
             connectTimeout: 10000,
             reconnectPeriod: 5000,
@@ -245,7 +280,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         console.log("Connecting to MQTT...", MQTT_CONFIG.url);
-        // We use the full URL but also pass path in options for redundancy
         mqttClient = mqtt.connect(MQTT_CONFIG.url, options);
 
         mqttClient.on("connect", () => {
@@ -278,11 +312,9 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const message = payload.toString();
 
-                // Time
                 if (topic === "smartfarm/time") {
                     const parts = message.split(" ");
                     if (parts.length === 2) {
-                        // Sync local clock with device time
                         const [year, month, day] = parts[0].split("-").map(Number);
                         const [hour, min, sec] = parts[1].split(":").map(Number);
                         const deviceTime = new Date(year, month - 1, day, hour, min, sec);
@@ -295,29 +327,25 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                // Sensors
                 if (topic === "smartfarm/sensor/dht11") {
                     const data = JSON.parse(message);
                     if (data.temperature !== undefined) updateSensor("temperature", data.temperature);
                     if (data.humidity !== undefined) updateSensor("humidity", data.humidity);
                 }
 
-                // Device Online
                 if (topic === "smartfarm/status/online") {
                     const isOnline = message === "true";
-                    $("espDot").className = `w-3 h-3 rounded-full ${isOnline ? "bg-emerald-400" : "bg-rose-400"}`;
+                    $("espDot").className = `w-4 h-4 rounded-full pulse-dot ${isOnline ? "bg-emerald-400" : "bg-rose-400"}`;
                     $("espStatus").textContent = isOnline ? "Online" : "Offline";
-                    $("espStatus").className = `text-lg font-bold ${isOnline ? "text-emerald-500" : "text-rose-500"}`;
+                    $("espStatus").className = `text-2xl font-bold ${isOnline ? "text-emerald-500" : "text-rose-500"}`;
                     addActivity(`อุปกรณ์ ${isOnline ? "ออนไลน์" : "ออฟไลน์"}`, "connection");
                 }
 
-                // Mode
                 if (topic === "smartfarm/mode/status") {
                     const isAuto = message === "AUTO";
                     updateMode(isAuto);
                 }
 
-                // Relay Status
                 if (topic.includes("relay") && topic.endsWith("status")) {
                     const relay = topic.split("/")[2];
                     const isOn = message === "ON";
@@ -326,7 +354,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                // Schedule Status
                 if (topic.includes("schedule") && topic.endsWith("status")) {
                     const relay = topic.split("/")[2];
                     if (RELAYS.includes(relay)) {
@@ -351,21 +378,23 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-
     // ==================== RELAY TOGGLES ====================
     RELAYS.forEach(relay => {
-        $(`${relay}Toggle`).addEventListener("change", (e) => {
-            if (!mqttClient || !mqttClient.connected) {
-                showToast("ยังไม่ได้เชื่อมต่อ MQTT", "error");
-                e.target.checked = !e.target.checked;
-                return;
-            }
-            const state = e.target.checked ? "ON" : "OFF";
-            mqttClient.publish(`smartfarm/relay/${relay}/set`, state);
-            updateRelayState(relay, e.target.checked);
-            showToast(`${RELAY_NAMES[relay]}: ${e.target.checked ? "เปิด" : "ปิด"}`, "success", 2000);
-            addActivity(`${RELAY_NAMES[relay]} → ${e.target.checked ? "เปิด" : "ปิด"}`, "relay");
-        });
+        const toggle = $(`${relay}Toggle`);
+        if (toggle) {
+            toggle.addEventListener("change", (e) => {
+                if (!mqttClient || !mqttClient.connected) {
+                    showToast("ยังไม่ได้เชื่อมต่อ MQTT", "error");
+                    e.target.checked = !e.target.checked;
+                    return;
+                }
+                const state = e.target.checked ? "ON" : "OFF";
+                mqttClient.publish(`smartfarm/relay/${relay}/set`, state);
+                updateRelayState(relay, e.target.checked);
+                showToast(`${RELAY_NAMES[relay]}: ${e.target.checked ? "เปิด" : "ปิด"}`, "success", 2000);
+                addActivity(`${RELAY_NAMES[relay]} → ${e.target.checked ? "เปิด" : "ปิด"}`, "relay");
+            });
+        }
     });
 
     // ==================== MODE BUTTONS ====================
@@ -399,16 +428,30 @@ document.addEventListener("DOMContentLoaded", () => {
         lucide.createIcons();
     });
 
-    // Load saved dark mode
+    // Load dark mode preference
     if (localStorage.getItem("darkMode") === "true") {
         document.documentElement.classList.add("dark");
         const icon = $("darkModeBtn").querySelector("i");
         icon.setAttribute("data-lucide", "sun");
-        lucide.createIcons();
     }
 
-    // ==================== INIT ====================
+    // ==================== SCHEDULE TAB CLICKS ====================
+    document.querySelectorAll(".sched-tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+            window.switchSchedTab(btn.dataset.tab);
+        });
+    });
+
+    // ==================== INITIALIZE ====================
     connectMQTT();
-    switchSchedTab("pump");
-    addActivity("ระบบเริ่มทำงาน", "connection");
+    window.switchSchedTab("pump");
+    lucide.createIcons();
+
+    // Reconnect every 30 seconds if disconnected
+    setInterval(() => {
+        if (!mqttClient || !mqttClient.connected) {
+            connectMQTT();
+        }
+    }, 30000);
+
 });

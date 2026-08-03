@@ -1,18 +1,35 @@
-/* ==================== Smart Farm Dashboard - Styles ==================== */
+/* ==================== Smart Farm Dashboard - Modern Styles ==================== */
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-.dark ::-webkit-scrollbar-thumb { background: #475569; }
+::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #cbd5e1, #94a3b8); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(to bottom, #94a3b8, #64748b); }
+.dark ::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #475569, #334155); }
 
 /* Smooth transitions */
 * { -webkit-tap-highlight-color: transparent; }
 
-/* Glass card hover */
-.glass { transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease; }
-.glass:hover { transform: translateY(-1px); }
+/* Glass card hover effects */
+.glass { 
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                background 0.3s ease; 
+}
+.glass:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.glass-strong {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                background 0.3s ease;
+}
+.glass-strong:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
 
 /* Toggle animation */
 .toggle-wrap input { position: absolute; width: 0; height: 0; }
@@ -23,7 +40,7 @@
 /* Focus styles */
 input[type="time"]:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 input:focus-visible {
     outline: 2px solid #10b981;
@@ -36,24 +53,407 @@ input:focus-visible {
 }
 
 /* Button press effect */
-button:active { transform: scale(0.97); }
+button:active { transform: scale(0.95); }
 
 /* Responsive */
+@media (max-width: 768px) {
+    .glass { padding: 1rem !important; }
+    .glass-strong { padding: 1rem !important; }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1rem; }
+}
+
 @media (max-width: 640px) {
-    .glass { padding: 0.75rem !important; }
-    h1 { font-size: 1.125rem; }
+    .glass { padding: 0.875rem !important; }
+    .glass-strong { padding: 0.875rem !important; }
+    h1 { font-size: 1.25rem; }
+    h2 { font-size: 0.95rem; }
 }
 
 @media (max-width: 380px) {
-    .grid-cols-2 > * { padding: 0.5rem; }
+    .grid-cols-2 > * { padding: 0.75rem; }
+    h1 { font-size: 1.1rem; }
 }
 
 /* Print styles */
 @media print {
-    header, footer, .glass { display: none; }
+    header, footer, .glass, .glass-strong { display: none; }
 }
 
 /* Accessibility - reduced motion */
 @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Enhanced animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+/* Sensor card glow effect */
+.sensor-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.sensor-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.sensor-card:hover::after {
+    left: 100%;
+}
+
+/* Loading skeleton */
+.skeleton {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+.dark .skeleton {
+    background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* Status indicators */
+.status-online {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth page transitions */
+main {
+    animation: slideInUp 0.4s ease;
+}
+
+/* Card entrance animation */
+.glass, .glass-strong {
+    animation: fadeInScale 0.5s ease backwards;
+}
+
+.glass:nth-child(1) { animation-delay: 0.05s; }
+.glass:nth-child(2) { animation-delay: 0.1s; }
+.glass:nth-child(3) { animation-delay: 0.15s; }
+.glass:nth-child(4) { animation-delay: 0.2s; }
+
+/* Gradient text animation */
+.gradient-text {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.1); }
+}
+
+/* Enhanced button styles */
+button {
+    position: relative;
+    overflow: hidden;
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+button:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Tooltip styles */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 50;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+}
+
+/* Dark mode smooth transition */
+html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Input field enhancements */
+input[type="time"],
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="time"]:hover,
+input[type="text"]:hover,
+input[type="number"]:hover,
+textarea:hover,
+select:hover {
+    border-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+/* Badge animations */
+.badge {
+    animation: slideInDown 0.3s ease;
+}
+
+/* Connection status pulse */
+#connDot {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Toast notifications enhancement */
+.toast-enter {
+    animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.toast-exit {
+    animation: toastOut 0.3s ease forwards;
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes toastOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+    }
+}
+
+/* Spin animation */
+.spin-slow {
+    animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Fade in animation */
+.fade-in {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Card hover scale effect */
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Pulse animation for status indicators */
+.pulse-dot {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Smooth color transitions for dark mode */
+.dark {
+    color-scheme: dark;
+}
+
+/* Enhanced focus states */
+:focus-within {
+    outline: none;
+}
+
+/* Scrollbar styling for activity log */
+#activityLog {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark #activityLog {
+    scrollbar-color: #475569 transparent;
+}
+
+/* Tab active state animation */
+.sched-tab {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.sched-tab::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #10b981, #059669);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.3s ease;
+}
+
+.sched-tab.tab-active::after {
+    transform: scaleX(1);
+}
+
+/* Header shadow enhancement */
+header {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.dark header {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient background animation */
+@keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+body {
+    background-size: 200% 200%;
+    animation: gradientMove 15s ease infinite;
+}
+
+/* Loading state */
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Disabled state */
+:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Success state */
+.success {
+    animation: slideInUp 0.3s ease;
+}
+
+/* Error state */
+.error {
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
