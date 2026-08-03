@@ -421,3 +421,13 @@
         left: 20px;
     }
 }
+
+/* Splash Screen Animations */
+@keyframes splashPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+#splash-logo {
+    animation: splashPulse 2s infinite ease-in-out;
+}
