@@ -1,5 +1,40 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+    // ==================== PAGE NAVIGATION (Tesla-style bottom nav) ====================
+    document.querySelectorAll(".nav-item").forEach(item => {
+        item.addEventListener("click", () => {
+            document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+            item.classList.add("active");
+            const page = item.dataset.page;
+            document.querySelectorAll(".page-section").forEach(p => p.classList.remove("active"));
+            document.getElementById("page-" + page).classList.add("active");
+        });
+    });
+
+    // Settings modal
+    document.getElementById("settingsBtn").addEventListener("click", () => {
+        document.getElementById("settingsModal").classList.add("show");
+    });
+
+    window.closeSettingsModal = () => {
+        document.getElementById("settingsModal").classList.remove("show");
+    };
+
+    document.getElementById("settingsModal").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("settingsModal")) {
+            closeSettingsModal();
+        }
+    });
+
+    window.applyMqttSettings = () => {
+        MQTT_CONFIG.url = document.getElementById("mqttUrl").value;
+        MQTT_CONFIG.username = document.getElementById("mqttUser").value;
+        MQTT_CONFIG.password = document.getElementById("mqttPass").value;
+        showToast("บันทึกการตั้งค่า MQTT แล้ว กำลังเชื่อมต่อใหม่...", "info");
+        closeSettingsModal();
+        connectMQTT();
+    };
+
     // ==================== CONFIG ====================
     const MQTT_CONFIG = {
         url: "wss://650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud:8884/mqtt",
@@ -64,13 +99,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const dot = $("connDot");
         const label = $("connText");
         label.textContent = text;
-        dot.className = "w-3 h-3 rounded-full pulse-dot " + (
+        dot.className = "w-2 h-2 rounded-full pulse-dot " + (
             status === "connected" ? "bg-emerald-400" :
             status === "connecting" ? "bg-amber-400" : "bg-rose-400"
         );
-        label.className = "text-xs font-semibold " + (
-            status === "connected" ? "text-emerald-600 dark:text-emerald-400" :
-            status === "connecting" ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"
+        label.className = "text-[10px] font-semibold " + (
+            status === "connected" ? "text-emerald-400" :
+            status === "connecting" ? "text-amber-400" : "text-rose-400"
         );
     }
 
@@ -86,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderActivityLog() {
         const container = $("activityLog");
         if (activityLog.length === 0) {
-            container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">ยังไม่มีกิจกรรม</p>';
+            container.innerHTML = '<p class="text-xs text-[#8E8E93] text-center py-8">ยังไม่มีกิจกรรม</p>';
             return;
         }
         const icons = { 
@@ -100,17 +135,17 @@ document.addEventListener("DOMContentLoaded", () => {
         container.innerHTML = activityLog.slice(0, 20).map(a => {
             const icon = icons[a.type] || "info";
             const colorMap = { 
-                relay: "text-emerald-500", 
-                mode: "text-purple-500", 
-                sensor: "text-blue-500", 
-                schedule: "text-amber-500", 
-                connection: "text-indigo-500", 
-                error: "text-rose-500" 
+                relay: "text-emerald-400", 
+                mode: "text-purple-400", 
+                sensor: "text-blue-400", 
+                schedule: "text-amber-400", 
+                connection: "text-indigo-400", 
+                error: "text-rose-400" 
             };
-            return `<div class="flex items-center gap-3 text-xs py-2 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0">
-                <span class="text-slate-400 font-mono w-16 flex-shrink-0">${a.time}</span>
-                <i data-lucide="${icon}" class="w-4 h-4 ${colorMap[a.type] || 'text-slate-400'} flex-shrink-0"></i>
-                <span class="text-slate-600 dark:text-slate-300 flex-1">${a.message}</span>
+            return `<div class="log-item">
+                <span class="text-[10px] text-[#8E8E93] font-mono w-14 flex-shrink-0">${a.time}</span>
+                <i data-lucide="${icon}" class="w-4 h-4 ${colorMap[a.type] || 'text-[#8E8E93]'} flex-shrink-0"></i>
+                <span class="text-xs text-white flex-1">${a.message}</span>
             </div>`;
         }).join("");
         lucide.createIcons();
@@ -142,35 +177,39 @@ document.addEventListener("DOMContentLoaded", () => {
         if (toggle) toggle.checked = isOn;
         if (text) {
             text.textContent = isOn ? "เปิด" : "ปิด";
-            text.className = "text-xs font-semibold " + (isOn ? "text-emerald-500" : "text-slate-400");
+            text.className = "text-[10px] " + (isOn ? "text-emerald-400 font-medium" : "text-[#8E8E93]");
         }
         const card = $(`card-${relay}`);
         if (card) {
             if (isOn) {
-                card.classList.add("ring-2", "ring-emerald-400/50");
-                card.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.3)";
+                card.classList.add("active");
             } else {
-                card.classList.remove("ring-2", "ring-emerald-400/50");
-                card.style.boxShadow = "";
+                card.classList.remove("active");
             }
+        }
+        // Update quick status on home page
+        const quickStatus = $(`${relay}QuickStatus`);
+        if (quickStatus) {
+            quickStatus.textContent = isOn ? "เปิด" : "ปิด";
+            quickStatus.className = "text-[9px] font-semibold " + (isOn ? "text-emerald-400" : "text-[#8E8E93]");
         }
     }
 
     // ==================== MODE UPDATE ====================
     function updateMode(isAuto) {
-        $("currentMode").textContent = isAuto ? "Auto" : "Manual";
-        $("currentMode").className = `px-3 py-1 rounded-full text-xs font-bold ${isAuto ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"}`;
-        $("manualModeBtn").className = isAuto ? "px-6 py-2 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 transition-all" : "px-6 py-2 rounded-xl text-sm font-semibold transition-all tab-active";
-        $("autoModeBtn").className = isAuto ? "px-6 py-2 rounded-xl text-sm font-semibold transition-all tab-active" : "px-6 py-2 rounded-xl text-sm font-semibold text-slate-500 dark:text-slate-400 transition-all";
+        $("currentMode").textContent = isAuto ? "Auto Mode" : "Manual Mode";
+        $("currentMode").className = isAuto ? "text-xs text-emerald-400 font-medium" : "text-xs text-[#8E8E93] font-medium";
+        $("manualModeBtn").className = isAuto ? "" : "active-mode";
+        $("autoModeBtn").className = isAuto ? "active-mode" : "";
     }
 
     // ==================== SCHEDULE TAB ====================
     window.switchSchedTab = (relay) => {
         currentSchedTab = relay;
-        document.querySelectorAll(".sched-tab").forEach(btn => {
+        document.querySelectorAll(".sched-tab-btn").forEach(btn => {
             const isActive = btn.dataset.tab === relay;
-            btn.className = "sched-tab flex-1 py-3 text-xs font-bold text-center border-b-2 transition-colors " +
-                (isActive ? "border-emerald-500 tab-active" : "border-transparent text-slate-500 dark:text-slate-400");
+            btn.className = "sched-tab-btn flex-1 text-center " +
+                (isActive ? "sched-active" : "");
         });
         const data = schedData[relay] || { enabled: false, on: "", off: "" };
         $("schedEnable").checked = data.enabled;
@@ -182,11 +221,11 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateSchedSummary(relay, data) {
         const el = $("schedSummary");
         if (data.enabled && data.on && data.off) {
-            el.innerHTML = `<span class="text-emerald-500 font-semibold">${RELAY_NAMES[relay]}</span> ตั้งเวลา <b class="text-slate-700 dark:text-slate-300">${data.on}</b> - <b class="text-slate-700 dark:text-slate-300">${data.off}</b>`;
+            el.innerHTML = `<span class="text-emerald-400 font-semibold">${RELAY_NAMES[relay]}</span> ตั้งเวลา <b class="text-white">${data.on}</b> - <b class="text-white">${data.off}</b>`;
         } else if (data.enabled) {
-            el.innerHTML = `<span class="text-amber-500 font-semibold">กำหนดเวลาเปิด/ปิดของ ${RELAY_NAMES[relay]}</span>`;
+            el.innerHTML = `<span class="text-amber-400 font-semibold">กำหนดเวลาเปิด/ปิดของ ${RELAY_NAMES[relay]}</span>`;
         } else {
-            el.innerHTML = `<span class="text-slate-400">ยังไม่เปิดใช้งานตารางเวลาของ ${RELAY_NAMES[relay]}</span>`;
+            el.innerHTML = `<span class="text-[#8E8E93]">ยังไม่เปิดใช้งานตารางเวลาของ ${RELAY_NAMES[relay]}</span>`;
         }
     }
 
@@ -335,9 +374,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (topic === "smartfarm/status/online") {
                     const isOnline = message === "true";
-                    $("espDot").className = `w-4 h-4 rounded-full pulse-dot ${isOnline ? "bg-emerald-400" : "bg-rose-400"}`;
+                    $("espDot").className = `w-2 h-2 rounded-full pulse-dot ${isOnline ? "bg-emerald-400" : "bg-rose-400"}`;
                     $("espStatus").textContent = isOnline ? "Online" : "Offline";
-                    $("espStatus").className = `text-2xl font-bold ${isOnline ? "text-emerald-500" : "text-rose-500"}`;
+                    $("espStatus").className = `text-[10px] font-semibold ${isOnline ? "text-emerald-400" : "text-rose-400"}`;
                     addActivity(`อุปกรณ์ ${isOnline ? "ออนไลน์" : "ออฟไลน์"}`, "connection");
                 }
 
@@ -436,7 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==================== SCHEDULE TAB CLICKS ====================
-    document.querySelectorAll(".sched-tab").forEach(btn => {
+    document.querySelectorAll(".sched-tab-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             window.switchSchedTab(btn.dataset.tab);
         });
