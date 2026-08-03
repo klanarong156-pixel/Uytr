@@ -2,60 +2,10 @@
 
 // Initialize Premium UI
 document.addEventListener('DOMContentLoaded', () => {
-    initLoginSystem();
     initSidebar();
     initPWAPrompt();
     initMicroInteractions();
 });
-
-// ==================== LOGIN SYSTEM ====================
-function initLoginSystem() {
-    const loginOverlay = document.getElementById('login-overlay');
-    if (!loginOverlay) return;
-
-    const isLoggedIn = localStorage.getItem('smartfarm_logged_in');
-    
-    if (!isLoggedIn) {
-        loginOverlay.classList.remove('hidden');
-    }
-
-    const loginBtn = document.getElementById('login-btn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', handleLogin);
-    }
-
-    const loginInputs = document.querySelectorAll('.login-input');
-    loginInputs.forEach(input => {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleLogin();
-        });
-    });
-}
-
-function handleLogin() {
-    const username = document.getElementById('login-username')?.value;
-    const password = document.getElementById('login-password')?.value;
-
-    if (username && password) {
-        localStorage.setItem('smartfarm_logged_in', 'true');
-        localStorage.setItem('smartfarm_user', username);
-        
-        const loginOverlay = document.getElementById('login-overlay');
-        loginOverlay.classList.add('hidden');
-        
-        setTimeout(() => {
-            showToast('ยินดีต้อนรับ ' + username, 'success');
-        }, 300);
-    } else {
-        showToast('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน', 'error');
-    }
-}
-
-function logout() {
-    localStorage.removeItem('smartfarm_logged_in');
-    localStorage.removeItem('smartfarm_user');
-    location.reload();
-}
 
 // ==================== SIDEBAR ====================
 function initSidebar() {
