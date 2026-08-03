@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Smart Farm Dashboard - สวนลุงนะ</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="สวนลุงนะ">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+    <meta name="theme-color" content="#1C1C1E">
+    
+    <!-- PWA Splash Screen Meta Tags (iOS) -->
+    <link rel="apple-touch-startup-image" href="assets/icons/splash.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -449,6 +461,12 @@
     </style>
 </head>
 <body>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <img src="logo.png" id="splash-logo" alt="สวนลุงนะ Logo">
+        <div class="splash-loader"></div>
+        <p class="mt-4 text-emerald-400 font-medium tracking-widest text-xs uppercase">สวนลุงนะ Smart Farm</p>
+    </div>
 
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none"></div>
@@ -461,9 +479,12 @@
     <!-- Header -->
     <div class="tesla-header">
         <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-xl font-bold text-white">สวนลุงนะ</h1>
-                <p class="text-xs text-[#8E8E93] mt-0.5">Smart Farm Control</p>
+            <div class="flex items-center gap-3">
+                <img src="logo.png" class="brand-logo-small" alt="Logo">
+                <div>
+                    <h1 class="text-xl font-bold text-white">สวนลุงนะ</h1>
+                    <p class="text-xs text-[#8E8E93] mt-0.5">Smart Farm Control</p>
+                </div>
             </div>
             <div class="flex items-center gap-3">
                 <!-- Connection Status -->
@@ -497,7 +518,7 @@
             <div class="farm-ring"></div>
             <div class="relative z-10 flex flex-col items-center">
                 <div class="w-28 h-28 rounded-full bg-gradient-to-br from-[#34D399] to-[#059669] flex items-center justify-center shadow-2xl shadow-emerald-500/50 mb-4 relative group">
-                    <i data-lucide="sprout" class="w-14 h-14 text-white group-hover:scale-110 transition-transform duration-500"></i>
+                    <img src="logo.png" class="w-20 h-20 rounded-2xl group-hover:scale-110 transition-transform duration-500" alt="Logo">
                     <div class="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#34D399] flex items-center justify-center border-2 border-[#1C1C1E] shadow-lg">
                         <div class="w-2.5 h-2.5 rounded-full bg-white pulse-dot"></div>
                     </div>

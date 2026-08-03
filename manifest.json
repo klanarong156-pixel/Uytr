@@ -1,0 +1,28 @@
+{
+  "name": "Smart Farm Dashboard - สวนลุงนะ",
+  "short_name": "สวนลุงนะ",
+  "description": "Smart Farm Control Dashboard for Suan Lung Na",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1C1C1E",
+  "theme_color": "#1C1C1E",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/maskable-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
