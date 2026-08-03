@@ -1,34 +1,41 @@
-/* ==================== Smart Farm Dashboard - Modern Styles ==================== */
+/* ==================== Smart Farm Dashboard - Vibrant Green Theme ==================== */
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+/* Custom Scrollbar with Green Theme */
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #cbd5e1, #94a3b8); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: linear-gradient(to bottom, #94a3b8, #64748b); }
-.dark ::-webkit-scrollbar-thumb { background: linear-gradient(to bottom, #475569, #334155); }
+::-webkit-scrollbar-thumb { 
+    background: linear-gradient(to bottom, #10b981, #34d399);
+    border-radius: 10px;
+    border: 2px solid rgba(16, 185, 129, 0.2);
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: linear-gradient(to bottom, #059669, #10b981);
+}
+
+.dark ::-webkit-scrollbar-thumb { 
+    background: linear-gradient(to bottom, #10b981, #34d399);
+}
 
 /* Smooth transitions */
 * { -webkit-tap-highlight-color: transparent; }
 
 /* Glass card hover effects */
 .glass { 
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                background 0.3s ease; 
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 .glass:hover { 
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 16px 40px rgba(16, 185, 129, 0.25);
 }
 
 .glass-strong {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                background 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 .glass-strong:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 20px 50px rgba(16, 185, 129, 0.3);
 }
 
 /* Toggle animation */
@@ -40,8 +47,9 @@
 /* Focus styles */
 input[type="time"]:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
 }
+
 input:focus-visible {
     outline: 2px solid #10b981;
     outline-offset: 2px;
@@ -49,7 +57,7 @@ input:focus-visible {
 
 /* Active card highlight */
 .card-active {
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 4px 12px rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4), 0 8px 20px rgba(16, 185, 129, 0.2);
 }
 
 /* Button press effect */
@@ -89,7 +97,7 @@ button:active { transform: scale(0.95); }
 @keyframes slideInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(30px);
     }
     to {
         opacity: 1;
@@ -100,7 +108,7 @@ button:active { transform: scale(0.95); }
 @keyframes slideInDown {
     from {
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-30px);
     }
     to {
         opacity: 1;
@@ -111,7 +119,7 @@ button:active { transform: scale(0.95); }
 @keyframes fadeInScale {
     from {
         opacity: 0;
-        transform: scale(0.95);
+        transform: scale(0.9);
     }
     to {
         opacity: 1;
@@ -128,10 +136,20 @@ button:active { transform: scale(0.95); }
     }
 }
 
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.2);
+    }
+}
+
 /* Sensor card glow effect */
 .sensor-card {
     position: relative;
     overflow: hidden;
+    animation: glow 3s ease-in-out infinite;
 }
 
 .sensor-card::after {
@@ -141,8 +159,8 @@ button:active { transform: scale(0.95); }
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transition: left 0.5s ease;
+    background: linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent);
+    transition: left 0.6s ease;
 }
 
 .sensor-card:hover::after {
@@ -169,7 +187,7 @@ button:active { transform: scale(0.95); }
 
 /* Smooth page transitions */
 main {
-    animation: slideInUp 0.4s ease;
+    animation: slideInUp 0.5s ease;
 }
 
 /* Card entrance animation */
@@ -184,16 +202,16 @@ main {
 
 /* Gradient text animation */
 .gradient-text {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: gradientShift 3s ease infinite;
+    animation: gradientShift 4s ease infinite;
 }
 
 @keyframes gradientShift {
     0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(1.1); }
+    50% { filter: brightness(1.15); }
 }
 
 /* Enhanced button styles */
@@ -210,7 +228,7 @@ button::before {
     width: 0;
     height: 0;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.4);
     transform: translate(-50%, -50%);
     transition: width 0.6s, height 0.6s;
 }
@@ -231,16 +249,18 @@ button:active::before {
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    padding: 0.5rem 0.75rem;
-    background: rgba(0, 0, 0, 0.8);
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #10b981, #34d399);
     color: white;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     font-size: 0.75rem;
+    font-weight: bold;
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
     z-index: 50;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 [data-tooltip]:hover::after {
@@ -282,7 +302,7 @@ select:hover {
 
 /* Toast notifications enhancement */
 .toast-enter {
-    animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .toast-exit {
@@ -292,7 +312,7 @@ select:hover {
 @keyframes toastIn {
     from {
         opacity: 0;
-        transform: translateY(20px) scale(0.9);
+        transform: translateY(30px) scale(0.8);
     }
     to {
         opacity: 1;
@@ -307,7 +327,7 @@ select:hover {
     }
     to {
         opacity: 0;
-        transform: translateY(20px) scale(0.9);
+        transform: translateY(30px) scale(0.8);
     }
 }
 
@@ -338,12 +358,12 @@ select:hover {
 
 /* Card hover scale effect */
 .card-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 50px rgba(16, 185, 129, 0.3);
 }
 
 /* Pulse animation for status indicators */
@@ -356,7 +376,7 @@ select:hover {
         opacity: 1;
     }
     50% {
-        opacity: 0.5;
+        opacity: 0.6;
     }
 }
 
@@ -373,11 +393,11 @@ select:hover {
 /* Scrollbar styling for activity log */
 #activityLog {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: #10b981 transparent;
 }
 
 .dark #activityLog {
-    scrollbar-color: #475569 transparent;
+    scrollbar-color: #10b981 transparent;
 }
 
 /* Tab active state animation */
@@ -389,14 +409,15 @@ select:hover {
 .sched-tab::after {
     content: '';
     position: absolute;
-    bottom: -2px;
+    bottom: -4px;
     left: 0;
     right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #10b981, #059669);
+    height: 3px;
+    background: linear-gradient(90deg, #10b981, #34d399);
     transform: scaleX(0);
     transform-origin: center;
     transition: transform 0.3s ease;
+    border-radius: 2px;
 }
 
 .sched-tab.tab-active::after {
@@ -405,29 +426,11 @@ select:hover {
 
 /* Header shadow enhancement */
 header {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
 }
 
 .dark header {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* Gradient background animation */
-@keyframes gradientMove {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-body {
-    background-size: 200% 200%;
-    animation: gradientMove 15s ease infinite;
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
 }
 
 /* Loading state */
@@ -454,6 +457,48 @@ body {
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+
+/* Vibrant green glow effect for cards */
+.glass, .glass-strong {
+    border-image: linear-gradient(135deg, rgba(16, 185, 129, 0.5), rgba(52, 211, 153, 0.3)) 1;
+}
+
+/* Enhanced shadow for depth */
+.glass {
+    box-shadow: 
+        0 8px 32px rgba(16, 185, 129, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.dark .glass {
+    box-shadow: 
+        0 8px 32px rgba(16, 185, 129, 0.2),
+        inset 0 1px 0 rgba(16, 185, 129, 0.3);
+}
+
+/* Text shadows for better readability */
+h1, h2, h3 {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dark h1, .dark h2, .dark h3 {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Highlight effect on hover */
+.glass:hover, .glass-strong:hover {
+    border-color: rgba(16, 185, 129, 0.6);
+}
+
+/* Smooth transitions for all elements */
+* {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Override for animations */
+.glass, .glass-strong, .card-hover, button {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
