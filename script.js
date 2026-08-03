@@ -98,15 +98,28 @@ document.addEventListener("DOMContentLoaded", () => {
     function setConnStatus(text, status) {
         const dot = $("connDot");
         const label = $("connText");
+        const wifiText = $("wifiStatusText");
+        
         label.textContent = text;
-        dot.className = "w-2 h-2 rounded-full pulse-dot " + (
-            status === "connected" ? "bg-emerald-400" :
-            status === "connecting" ? "bg-amber-400" : "bg-rose-400"
-        );
-        label.className = "text-[10px] font-semibold " + (
-            status === "connected" ? "text-emerald-400" :
-            status === "connecting" ? "text-amber-400" : "text-rose-400"
-        );
+        if (wifiText) wifiText.textContent = text;
+        
+        const dotColor = status === "connected" ? "bg-emerald-400" : status === "connecting" ? "bg-amber-400" : "bg-rose-400";
+        const textColor = status === "connected" ? "text-emerald-400" : status === "connecting" ? "text-amber-400" : "text-rose-400";
+        
+        dot.className = "w-2 h-2 rounded-full pulse-dot " + dotColor;
+        label.className = "text-[10px] font-semibold " + textColor;
+        
+        if (wifiText) {
+            const wifiBadge = wifiText.parentElement;
+            wifiBadge.className = wifiBadge.className.replace(/bg-\w+-500\/10|text-\w+-400|border-\w+-500\/20/g, "");
+            if (status === "connected") {
+                wifiBadge.classList.add("bg-blue-500/10", "text-blue-400", "border-blue-500/20");
+            } else if (status === "connecting") {
+                wifiBadge.classList.add("bg-amber-500/10", "text-amber-400", "border-amber-500/20");
+            } else {
+                wifiBadge.classList.add("bg-rose-500/10", "text-rose-400", "border-rose-500/20");
+            }
+        }
     }
 
     // ==================== ACTIVITY LOG ====================
@@ -281,19 +294,22 @@ document.addEventListener("DOMContentLoaded", () => {
     function startLocalClock() {
         setInterval(() => {
             const now = new Date();
+            let displayTime;
             if (lastDeviceTime) {
-                const displayTime = new Date(now.getTime() + deviceTimeOffset);
-                const timeStr = displayTime.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-                const dateStr = displayTime.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
-                
-                $("currentTime").innerHTML = `<span class="font-mono">${timeStr}</span>`;
-                $("currentDate").textContent = dateStr;
+                displayTime = new Date(now.getTime() + deviceTimeOffset);
             } else {
-                const timeStr = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-                const dateStr = now.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
-                $("currentTime").innerHTML = `<span class="font-mono">${timeStr}</span>`;
-                $("currentDate").textContent = dateStr;
+                displayTime = now;
             }
+            
+            const timeStr = displayTime.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
+            const dateStr = displayTime.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
+            
+            const seconds = displayTime.getSeconds();
+            const blinkClass = seconds % 2 === 0 ? "opacity-100" : "opacity-30";
+            const [h, m] = timeStr.split(":");
+            
+            $("currentTime").innerHTML = `<span class="font-mono">${h}<span class="${blinkClass} transition-opacity duration-500">:</span>${m}</span>`;
+            $("currentDate").textContent = dateStr;
         }, 1000);
     }
     startLocalClock();
@@ -361,7 +377,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         deviceTimeOffset = deviceTime.getTime() - localTime.getTime();
                         lastDeviceTime = deviceTime;
                         
-                        $("currentTime").innerHTML = `<span class="font-mono">${parts[1]}</span>`;
+                        const displayTime = parts[1].split(":").slice(0, 2).join(":");
+                        $("currentTime").innerHTML = `<span class="font-mono">${displayTime}</span>`;
                         $("currentDate").textContent = parts[0];
                     }
                 }
