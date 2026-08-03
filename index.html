@@ -20,6 +20,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="premium.css">
+    <script src="premium.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -461,6 +463,68 @@
     </style>
 </head>
 <body>
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="logo.png" class="login-logo" alt="สวนลุงนะ Logo">
+                <h1 class="login-title">สวนลุงนะ</h1>
+                <p class="login-subtitle">Smart Farm Dashboard</p>
+            </div>
+            <form class="login-form" onsubmit="return false;">
+                <input type="text" id="login-username" class="login-input" placeholder="ชื่อผู้ใช้" required>
+                <input type="password" id="login-password" class="login-input" placeholder="รหัสผ่าน" required>
+                <button type="button" id="login-btn" class="login-button">เข้าสู่ระบบ</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <img src="logo.png" class="sidebar-logo" alt="Logo">
+            <h2 style="color: #FFFFFF; font-size: 16px; font-weight: 600;">สวนลุงนะ</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-item active" data-page="home">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span>หน้าหลัก</span>
+            </div>
+            <div class="sidebar-nav-item" data-page="controls">
+                <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+                <span>ควบคุม</span>
+            </div>
+            <div class="sidebar-nav-item" data-page="schedule">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+                <span>ตั้งเวลา</span>
+            </div>
+            <div class="sidebar-nav-item" data-page="activity">
+                <i data-lucide="history" class="w-5 h-5"></i>
+                <span>ประวัติ</span>
+            </div>
+            <hr style="border: none; border-top: 1px solid rgba(52, 211, 153, 0.1); margin: 16px 0;">
+            <div class="sidebar-nav-item" onclick="logout()">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                <span>ออกจากระบบ</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebar-toggle" class="sidebar-toggle">
+        <i data-lucide="menu" class="w-5 h-5 text-white"></i>
+    </button>
+
+    <!-- PWA Install Prompt -->
+    <div id="pwa-install-prompt" class="pwa-install-prompt" style="display: none;">
+        <div class="pwa-prompt-title">ติดตั้งแอป</div>
+        <div class="pwa-prompt-text">ติดตั้ง สวนลุงนะ บนหน้าจอโฮมของคุณเพื่อเข้าถึงได้ง่ายขึ้น</div>
+        <div class="pwa-prompt-buttons">
+            <button class="pwa-prompt-btn install" onclick="installPWA()">ติดตั้ง</button>
+            <button class="pwa-prompt-btn cancel" onclick="closePWAPrompt()">ปิด</button>
+        </div>
+    </div>
+
     <!-- Splash Screen -->
     <div id="splash-screen">
         <img src="logo.png" id="splash-logo" alt="สวนลุงนะ Logo">
