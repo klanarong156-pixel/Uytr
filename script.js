@@ -174,11 +174,11 @@ document.addEventListener("DOMContentLoaded", () => {
             $("temperature").textContent = value.toFixed(1);
             const pct = Math.min(100, Math.max(0, ((value + 10) / 60) * 100));
             bar.style.width = pct + "%";
-            addActivity(`อุณหภูมิ: ${value.toFixed(1)}°C`, "sensor");
+            // Sensor logging disabled
         } else {
             $("humidity").textContent = value.toFixed(1);
             bar.style.width = Math.min(100, value) + "%";
-            addActivity(`ความชื้น: ${value.toFixed(1)}%`, "sensor");
+            // Sensor logging disabled
         }
         timeEl.textContent = now;
     }
