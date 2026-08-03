@@ -2,52 +2,11 @@
 
 // Initialize Premium UI
 document.addEventListener('DOMContentLoaded', () => {
-    initSidebar();
     initPWAPrompt();
     initMicroInteractions();
 });
 
-// ==================== SIDEBAR ====================
-function initSidebar() {
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const sidebar = document.getElementById('sidebar');
-    
-    if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-        });
-
-        // Close sidebar when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                sidebar.classList.remove('active');
-            }
-        });
-
-        // Sidebar navigation
-        const sidebarItems = document.querySelectorAll('.sidebar-nav-item');
-        sidebarItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const page = item.dataset.page;
-                if (page) {
-                    switchPage(page);
-                    sidebar.classList.remove('active');
-                }
-            });
-        });
-    }
-}
-
-function switchPage(page) {
-    document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + page)?.classList.add('active');
-    
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
-    
-    document.querySelectorAll('.sidebar-nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector(`.sidebar-nav-item[data-page="${page}"]`)?.classList.add('active');
-}
+// Sidebar removed - using bottom navigation only
 
 // ==================== PWA INSTALL PROMPT ====================
 let deferredPrompt = null;
