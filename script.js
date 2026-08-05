@@ -10,26 +10,37 @@ document.addEventListener("DOMContentLoaded", () => {
             item.classList.add("active");
             const page = item.dataset.page;
             document.querySelectorAll(".page-section").forEach(p => p.classList.remove("active"));
-            document.getElementById("page-" + page).classList.add("active");
+            const targetPage = document.getElementById("page-" + page);
+            if (targetPage) targetPage.classList.add("active");
         });
     });
 
     // ==================== SETTINGS MODAL ====================
-    document.getElementById("settingsBtn").addEventListener("click", () => {
-        document.getElementById("settingsModal").classList.add("show");
-    });
+    const settingsBtn = document.getElementById("settingsBtn");
+    if (settingsBtn) {
+        settingsBtn.addEventListener("click", () => {
+            const modal = document.getElementById("settingsModal");
+            if (modal) modal.classList.add("show");
+        });
+    }
 
     window.closeSettingsModal = () => {
-        document.getElementById("settingsModal").classList.remove("show");
+        const modal = document.getElementById("settingsModal");
+        if (modal) modal.classList.remove("show");
     };
 
     window.applyMqttSettings = () => {
-        MQTT_CONFIG.url = $("mqttUrl").value;
-        MQTT_CONFIG.username = $("mqttUser").value;
-        MQTT_CONFIG.password = $("mqttPass").value;
+        if (typeof MQTT_CONFIG !== 'undefined') {
+            const urlEl = $("mqttUrl");
+            const userEl = $("mqttUser");
+            const passEl = $("mqttPass");
+            if (urlEl) MQTT_CONFIG.url = urlEl.value;
+            if (userEl) MQTT_CONFIG.username = userEl.value;
+            if (passEl) MQTT_CONFIG.password = passEl.value;
+        }
         showToast("บันทึกการตั้งค่า MQTT แล้ว กำลังเชื่อมต่อใหม่...", "info");
         closeSettingsModal();
-        window.mqttHandler.connect();
+        if (window.mqttHandler) window.mqttHandler.connect();
     };
 
     // ==================== TOAST NOTIFICATIONS ====================
@@ -130,9 +141,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==================== ALL RELAYS ====================
     window.allRelays = (state) => {
         const action = state ? "เปิด" : "ปิด";
-        RELAYS.forEach(relay => {
-            window.mqttHandler.publish(MQTT_CONFIG.topics.relaySet(relay), state ? "ON" : "OFF");
-        });
+        if (typeof RELAYS !== 'undefined') {
+            RELAYS.forEach(relay => {
+                if (window.mqttHandler) window.mqttHandler.publish(MQTT_CONFIG.topics.relaySet(relay), state ? "ON" : "OFF");
+            });
+        }
         showToast(`${action}อุปกรณ์ทั้งหมดแล้ว`, "success");
         addActivity(`${action}อุปกรณ์ทั้งหมด`, "relay");
     };
@@ -155,19 +168,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ==================== INITIALIZATION ====================
     // Start MQTT
-    window.mqttHandler.connect();
+    if (window.mqttHandler) window.mqttHandler.connect();
     
     // Lucide icons
     if (window.lucide) lucide.createIcons();
 
-    // Schedule logic (simplified for now, keeping existing functionality)
+    // Schedule logic
     let currentSchedTab = "pump";
     window.switchSchedTab = (relay) => {
         currentSchedTab = relay;
         document.querySelectorAll(".sched-tab-btn").forEach(btn => {
             btn.classList.toggle("sched-active", btn.dataset.tab === relay);
         });
-        // In a real app, we'd fetch current schedule data here
     };
 
     window.saveSchedule = () => {
@@ -176,11 +188,14 @@ document.addEventListener("DOMContentLoaded", () => {
             on: $("schedOn").value || "00:00",
             off: $("schedOff").value || "00:00"
         };
-        window.mqttHandler.publish(MQTT_CONFIG.topics.scheduleSet(currentSchedTab), JSON.stringify(data), { retain: true });
-        showToast(`บันทึกตารางเวลา ${RELAY_NAMES[currentSchedTab]} แล้ว`, "success");
-        addActivity(`ตั้งค่าตารางเวลา ${RELAY_NAMES[currentSchedTab]}`, "schedule");
+        if (window.mqttHandler && typeof MQTT_CONFIG !== 'undefined') {
+            window.mqttHandler.publish(MQTT_CONFIG.topics.scheduleSet(currentSchedTab), JSON.stringify(data), { retain: true });
+        }
+        if (typeof RELAY_NAMES !== 'undefined') {
+            showToast(`บันทึกตารางเวลา ${RELAY_NAMES[currentSchedTab]} แล้ว`, "success");
+            addActivity(`ตั้งค่าตารางเวลา ${RELAY_NAMES[currentSchedTab]}`, "schedule");
+        }
     };
-});
 
     // ==================== DARK MODE ====================
     const darkModeBtn = $("darkModeBtn");
@@ -204,12 +219,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==================== PWA & SPLASH ====================
-    window.addEventListener('load', () => {
+    const hideSplash = () => {
         const splash = $("splash-screen");
         if (splash) {
-            setTimeout(() => {
-                splash.classList.add("fade-out");
-                setTimeout(() => splash.style.display = "none", 500);
-            }, 1500);
+            splash.classList.add("fade-out");
+            setTimeout(() => splash.style.display = "none", 500);
         }
-    });
+    };
+
+    if (document.readyState === "complete") {
+        setTimeout(hideSplash, 1500);
+    } else {
+        window.addEventListener("load", () => setTimeout(hideSplash, 1500));
+    }
+});

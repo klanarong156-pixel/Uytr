@@ -39,6 +39,15 @@ class PumpController {
                 this.requestToggle(e.target.checked);
             });
         }
+
+        // Quick button listener (Home page)
+        const quickBtn = document.getElementById('quickPumpBtn');
+        if (quickBtn) {
+            quickBtn.addEventListener('click', () => {
+                const currentStatus = document.getElementById('pumpQuickStatus').textContent === 'เปิด';
+                this.requestToggle(!currentStatus);
+            });
+        }
     }
 
     requestToggle(isOn) {
@@ -70,6 +79,19 @@ class PumpController {
         // Update toggle UI to match real status
         const toggle = document.getElementById('pumpToggle');
         if (toggle) toggle.checked = isOn;
+
+        // Update Quick Status UI (Home page)
+        const quickStatus = document.getElementById('pumpQuickStatus');
+        const quickIconBg = document.getElementById('quickPumpIconBg');
+        if (quickStatus) {
+            quickStatus.textContent = isOn ? 'เปิด' : 'ปิด';
+            quickStatus.className = `text-[9px] font-semibold ${isOn ? 'text-emerald-400' : 'text-[#8E8E93]'}`;
+        }
+        if (quickIconBg) {
+            quickIconBg.className = `w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors duration-300 ${isOn ? 'bg-emerald-500/20' : 'bg-[#007AFF]/20'}`;
+            const icon = quickIconBg.querySelector('i');
+            if (icon) icon.className = `w-4 h-4 ${isOn ? 'text-emerald-400' : 'text-[#007AFF]'}`;
+        }
 
         // Handle runtime
         if (isOn) {
