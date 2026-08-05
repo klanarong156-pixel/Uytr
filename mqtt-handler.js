@@ -57,12 +57,19 @@ class MqttHandler {
             const relay = topic.split('/')[2];
             this.dispatchEvent('relay:status', { relay, status: payload === 'ON' });
         } else if (topic === this.config.topics.online) {
-            this.dispatchEvent('esp:status', payload === 'online');
+            this.dispatchEvent('esp:status', payload === 'true');
         } else if (topic === this.config.topics.modeStatus) {
             this.dispatchEvent('mode:status', payload === 'AUTO');
         } else if (topic.startsWith('smartfarm/sensor/')) {
-            const type = topic.split('/')[2];
-            this.dispatchEvent('sensor:data', { type, value: parseFloat(payload) });
+            try {
+                const data = JSON.parse(payload);
+                for (const [key, value] of Object.entries(data)) {
+                    this.dispatchEvent('sensor:data', { type: key, value: parseFloat(value) });
+                }
+            } catch (e) {
+                const type = topic.split('/')[2];
+                this.dispatchEvent('sensor:data', { type, value: parseFloat(payload) });
+            }
         }
         
         // Generic message event

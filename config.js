@@ -35,5 +35,9 @@ const APP_STATE = {
         zone1: false,
         lighthome: false,
         lightsala: false
+    },
+    sensors: {
+        temperature: 0,
+        humidity: 0
     }
 };

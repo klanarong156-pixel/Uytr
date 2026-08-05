@@ -65,6 +65,12 @@ class PumpController {
 
     handleStatusUpdate(isOn) {
         clearTimeout(this.safetyTimeout);
+        
+        // Update APP_STATE
+        if (typeof APP_STATE !== 'undefined') {
+            APP_STATE.relays.pump = isOn;
+        }
+
         this.setState(isOn ? 'running' : 'idle');
         
         // Update toggle UI to match real status
@@ -81,7 +87,8 @@ class PumpController {
         // Update last activated time
         if (isOn) {
             const now = new Date();
-            document.getElementById('pumpLastTime').textContent = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            const timeEl = document.getElementById('pumpLastTime');
+            if (timeEl) timeEl.textContent = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
         }
     }
 
