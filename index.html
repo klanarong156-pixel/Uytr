@@ -21,6 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="premium.css">
+    <link rel="stylesheet" href="pump-animation.css">
     <script src="premium.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -685,20 +686,61 @@
         <div class="px-5 mb-6">
             <h2 class="text-sm font-semibold text-[#8E8E93] mb-3 uppercase tracking-wider">อุปกรณ์</h2>
             <div class="relay-grid">
-                <!-- Pump -->
-                <div id="card-pump" class="relay-card">
-                    <div class="flex items-center justify-between w-full">
-                        <div class="w-10 h-10 rounded-full bg-[#007AFF]/20 flex items-center justify-center">
-                            <i data-lucide="waves" class="w-5 h-5 text-[#007AFF]"></i>
+                <!-- Pump Card Premium -->
+                <div id="card-pump" class="tesla-card pump-card-premium flex flex-col">
+                    <div class="flex items-center justify-between w-full mb-4">
+                        <div class="flex items-center gap-2">
+                            <div id="pump-icon-bg" class="w-10 h-10 rounded-full bg-[#007AFF]/20 flex items-center justify-center transition-colors duration-500">
+                                <i data-lucide="waves" class="w-5 h-5 text-[#007AFF] pump-icon-svg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-white">ระบบปั๊มน้ำ</h3>
+                                <div class="flex gap-1 mt-0.5">
+                                    <span id="pump-mqtt-badge" class="status-badge badge-mqtt-offline">MQTT</span>
+                                    <span id="pump-mode-badge" class="status-badge badge-mode-manual">Manual</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="ios-toggle">
                             <input type="checkbox" id="pumpToggle">
                             <label for="pumpToggle" class="toggle-slider"></label>
                         </div>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-white">ปั๊มน้ำ</h3>
-                        <p id="pumpStatusText" class="text-[10px] text-[#8E8E93]">ปิด</p>
+
+                    <!-- Animation Canvas (SVG) -->
+                    <div class="pump-svg-container">
+                        <svg viewBox="0 0 200 120" class="w-full h-full">
+                            <!-- Pipes -->
+                            <path d="M40 80 L160 80 L160 40" class="water-pipe" fill="none" />
+                            <path d="M40 80 L160 80 L160 40" class="water-flow" fill="none" />
+                            
+                            <!-- Pump Body -->
+                            <rect x="20" y="70" width="40" height="30" rx="4" fill="#3A3A3C" />
+                            <circle cx="40" cy="85" r="12" fill="#2C2C2E" stroke="#48484A" stroke-width="2" />
+                            
+                            <!-- Sprinkler -->
+                            <g transform="translate(160, 40)">
+                                <g class="sprinkler-head">
+                                    <line x1="-15" y1="0" x2="15" y2="0" stroke="#48484A" stroke-width="4" stroke-linecap="round" />
+                                    <circle cx="0" cy="0" r="5" fill="#3A3A3C" />
+                                    <!-- Droplets (Animated via CSS) -->
+                                    <circle class="droplet" cx="0" cy="0" r="2" style="--dx: -30px; --dy: -20px; animation-delay: 0s;" />
+                                    <circle class="droplet" cx="0" cy="0" r="2" style="--dx: 30px; --dy: -20px; animation-delay: 0.2s;" />
+                                    <circle class="droplet" cx="0" cy="0" r="2" style="--dx: -20px; --dy: -40px; animation-delay: 0.4s;" />
+                                    <circle class="droplet" cx="0" cy="0" r="2" style="--dx: 20px; --dy: -40px; animation-delay: 0.6s;" />
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <div class="mt-auto pt-2 border-t border-[#3A3A3C] flex justify-between items-end">
+                        <div>
+                            <p id="pumpStatusText" class="text-xs font-bold text-[#8E8E93] transition-colors duration-300">หยุดรดน้ำ</p>
+                            <p id="pumpRuntime" class="text-[10px] text-[#8E8E93] mt-0.5">เวลาทำงาน: 00:00:00</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] text-[#8E8E93]">ล่าสุด: <span id="pumpLastTime">--:--</span></p>
+                        </div>
                     </div>
                 </div>
 
@@ -869,6 +911,11 @@
     </div>
 
     <script src="https://unpkg.com/mqtt@5.0.0/dist/mqtt.min.js"></script>
+    <script src="config.js"></script>
+    <script src="mqtt-handler.js"></script>
+    <script src="animation.js"></script>
+    <script src="pump-controller.js"></script>
+    <script src="ui-controller.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
