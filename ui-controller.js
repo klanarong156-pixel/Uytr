@@ -35,6 +35,12 @@ class UiController {
     updateSensor(type, value) {
         const id = type === 'temperature' ? 'temperature' : 'humidity';
         const el = document.getElementById(id);
+        
+        // Update APP_STATE
+        if (typeof APP_STATE !== 'undefined' && APP_STATE.sensors) {
+            APP_STATE.sensors[type] = value;
+        }
+
         if (el) {
             el.textContent = value.toFixed(1);
             
@@ -47,10 +53,22 @@ class UiController {
                     : Math.min(100, value);
                 bar.style.width = `${pct}%`;
             }
+
+            // Update time
+            const timeEl = document.getElementById(type === 'temperature' ? 'tempTime' : 'humTime');
+            if (timeEl) {
+                const now = new Date();
+                timeEl.textContent = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            }
         }
     }
 
     updateRelayUI(relay, isOn) {
+        // Update APP_STATE
+        if (typeof APP_STATE !== 'undefined') {
+            APP_STATE.relays[relay] = isOn;
+        }
+
         const toggle = document.getElementById(`${relay}Toggle`);
         const text = document.getElementById(`${relay}StatusText`);
         const card = document.getElementById(`card-${relay}`);
