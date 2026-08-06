@@ -1,35 +1,24 @@
-<<<<<<< HEAD
 const CACHE_NAME = 'suan-lung-na-v3';
-=======
-const CACHE_NAME = 'suan-lung-na-v2';
->>>>>>> cfe7be8 (Fix: Update Service Worker to v2 to clear stale login screen, and add interactive toggles to Home page for easier control)
 const ASSETS = [
   './',
   './index.html',
   './style.css',
-  './premium.css',
   './script.js',
-  './premium.js',
   './logo.png',
-  './manifest.json'
+  './manifest.json',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png'
 ];
 
-<<<<<<< HEAD
 self.addEventListener('install', (event) => {
   self.skipWaiting();
-=======
-// Install Event
-self.addEventListener('install', event => {
->>>>>>> cfe7be8 (Fix: Update Service Worker to v2 to clear stale login screen, and add interactive toggles to Home page for easier control)
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
+    caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
     })
   );
-  self.skipWaiting();
 });
 
-<<<<<<< HEAD
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -38,26 +27,6 @@ self.addEventListener('activate', (event) => {
           .filter((name) => name !== CACHE_NAME)
           .map((name) => caches.delete(name))
       );
-=======
-// Activate Event - Clean up old caches
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-            .map(key => caches.delete(key))
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-// Fetch Event - Network First Strategy for dashboard data, Cache fallback
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
->>>>>>> cfe7be8 (Fix: Update Service Worker to v2 to clear stale login screen, and add interactive toggles to Home page for easier control)
     })
   );
   self.clients.claim();
