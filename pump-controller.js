@@ -1,4 +1,4 @@
-// Pump Controller - Synchronizes MQTT status with UI/Animations
+// Pump Controller - Synchronizes MQTT status with UI (animations removed)
 
 class PumpController {
     constructor() {
@@ -42,17 +42,13 @@ class PumpController {
     }
 
     requestToggle(isOn) {
-        // 1. Spring animation
-        const card = document.getElementById('card-pump');
-        window.animationController.playSpring(card);
-
-        // 2. Set temporary state
+        // Set temporary state (static, no animation)
         this.setState('connecting');
         
-        // 3. Publish to MQTT
+        // Publish to MQTT (unchanged)
         window.mqttHandler.publish(MQTT_CONFIG.topics.relaySet('pump'), isOn ? 'ON' : 'OFF');
 
-        // 4. Safety timeout: if no response from MQTT in 5 seconds, revert
+        // Safety timeout: if no response from MQTT in 5 seconds, revert
         clearTimeout(this.safetyTimeout);
         this.safetyTimeout = setTimeout(() => {
             if (this.state === 'connecting') {
@@ -94,7 +90,23 @@ class PumpController {
 
     setState(state) {
         this.state = state;
-        window.animationController.setPumpState(state);
+        // Update static UI state without any animations
+        const statusText = document.getElementById('pumpStatusText');
+        const iconBg = document.getElementById('pump-icon-bg');
+
+        if (statusText) {
+            if (state === 'running') statusText.textContent = 'กำลังรดน้ำ...';
+            else if (state === 'connecting') statusText.textContent = 'กำลังเชื่อมต่อ...';
+            else if (state === 'error') statusText.textContent = 'ข้อผิดพลาด!';
+            else statusText.textContent = 'หยุดรดน้ำ';
+        }
+
+        if (iconBg) {
+            if (state === 'running') iconBg.style.backgroundColor = '#3B82F6';
+            else if (state === 'connecting') iconBg.style.backgroundColor = '#F59E0B';
+            else if (state === 'error') iconBg.style.backgroundColor = '#EF4444';
+            else iconBg.style.backgroundColor = '';
+        }
     }
 
     revertUI() {
@@ -111,7 +123,8 @@ class PumpController {
             const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
             const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
             const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-            document.getElementById('pumpRuntime').textContent = `เวลาทำงาน: ${h}:${m}:${s}`;
+            const el = document.getElementById('pumpRuntime');
+            if (el) el.textContent = `เวลาทำงาน: ${h}:${m}:${s}`;
         }, 1000);
     }
 

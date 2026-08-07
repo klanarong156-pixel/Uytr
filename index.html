@@ -21,7 +21,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="premium.css">
-    <link rel="stylesheet" href="pump-animation.css">
     <script src="premium.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -50,10 +49,10 @@
     </script>
     <!-- Safety Splash Timeout (runs inline before any external script) -->
     <script>
-        // Force-hide splash after 8 seconds no matter what
+        // Force-hide splash after 8 seconds (no animation)
         setTimeout(() => {
             const s = document.getElementById('splash-screen');
-            if (s) { s.classList.add('fade-out'); setTimeout(() => { s.style.display = 'none'; }, 500); }
+            if (s) { s.style.display = 'none'; }
         }, 8000);
     </script>
     <style>
@@ -86,7 +85,6 @@
             border-radius: 20px;
             border: 1px solid #3A3A3C;
             padding: 20px;
-            transition: all 0.3s ease;
         }
 
         .tesla-card:active {
@@ -115,7 +113,6 @@
             bottom: 0;
             background-color: #39393D;
             border-radius: 31px;
-            transition: 0.3s;
         }
 
         .ios-toggle .toggle-slider:before {
@@ -127,7 +124,6 @@
             bottom: 2px;
             background-color: white;
             border-radius: 50%;
-            transition: 0.3s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
@@ -161,7 +157,6 @@
             gap: 4px;
             padding: 4px 12px;
             border-radius: 12px;
-            transition: all 0.2s ease;
             cursor: pointer;
         }
 
@@ -209,17 +204,11 @@
             position: absolute;
             border: 2px solid rgba(52, 211, 153, 0.3);
             border-radius: 50%;
-            animation: ringPulse 3s ease-in-out infinite;
         }
 
-        .farm-ring:nth-child(1) { width: 200px; height: 200px; animation-delay: 0s; }
-        .farm-ring:nth-child(2) { width: 260px; height: 260px; animation-delay: 0.5s; }
-        .farm-ring:nth-child(3) { width: 320px; height: 320px; animation-delay: 1s; }
-
-        @keyframes ringPulse {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(1.05); }
-        }
+        .farm-ring:nth-child(1) { width: 200px; height: 200px; }
+        .farm-ring:nth-child(2) { width: 260px; height: 260px; }
+        .farm-ring:nth-child(3) { width: 320px; height: 320px; }
 
         /* Sensor gauge */
         .sensor-gauge {
@@ -265,12 +254,10 @@
             flex-direction: column;
             align-items: flex-start;
             gap: 12px;
-            transition: all 0.3s ease;
         }
 
         .relay-card.active {
             border-color: #34D399;
-            box-shadow: 0 0 20px rgba(52, 211, 153, 0.15);
         }
 
         /* Schedule section */
@@ -283,7 +270,6 @@
             font-size: 14px;
             width: 100%;
             outline: none;
-            transition: border-color 0.2s;
         }
 
         .sched-input:focus {
@@ -302,123 +288,6 @@
         .log-item:last-child {
             border-bottom: none;
         }
-
-        /* Toast */
-        .toast-enter { animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        .toast-exit { animation: toastOut 0.3s ease forwards; }
-
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateY(30px) scale(0.8); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes toastOut {
-            from { opacity: 1; transform: translateY(0) scale(1); }
-            to { opacity: 0; transform: translateY(30px) scale(0.8); }
-        }
-
-        /* Pulse dot */
-        .pulse-dot {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        /* Mode selector */
-        .mode-pill {
-            display: flex;
-            background: #2C2C2E;
-            border-radius: 12px;
-            padding: 4px;
-            border: 1px solid #3A3A3C;
-        }
-
-        .mode-pill button {
-            flex: 1;
-            padding: 8px 16px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .mode-pill button.active-mode {
-            background: #34D399;
-            color: #1C1C1E;
-        }
-
-        .mode-pill button:not(.active-mode) {
-            color: #8E8E93;
-        }
-
-        /* Schedule tabs */
-        .sched-tab-btn {
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            background: #2C2C2E;
-            border: 1px solid #3A3A3C;
-            color: #8E8E93;
-            transition: all 0.2s;
-        }
-
-        .sched-tab-btn.sched-active {
-            background: #34D399;
-            color: #1C1C1E;
-            border-color: #34D399;
-        }
-
-        /* Settings modal */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 100;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-
-        .modal-overlay.show {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        .modal-content {
-            background: #2C2C2E;
-            border-radius: 20px 20px 0 0;
-            padding: 20px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
-        }
-
-        .modal-overlay.show .modal-content {
-            transform: translateY(0);
-        }
-
-        .modal-handle {
-            width: 40px;
-            height: 4px;
-            background: #48484A;
-            border-radius: 2px;
-            margin: 0 auto 16px;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #48484A; border-radius: 4px; }
 
         /* Connection indicator in header */
         .conn-badge {
@@ -439,7 +308,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
             border: 1px solid #3A3A3C;
             background: #2C2C2E;
         }
@@ -479,7 +347,7 @@
     <!-- PWA Install Prompt -->
     <div id="pwa-install-prompt" class="pwa-install-prompt" style="display: none;">
         <div class="pwa-prompt-title">ติดตั้งแอป</div>
-        <div class="pwa-prompt-text">ติดตั้ง สวนลุงนะ บนหน้าจอโฮมของคุณเพื่อเข้าถึงได้ง่ายขึ้น</div>
+        <div class="pwa-prompt-text">ติดตั้ง สวนลุงนะ บนหน้าจอโฮมของคุณเพื่อเข้าถึงได้ง่ายข[...]</div>
         <div class="pwa-prompt-buttons">
             <button class="pwa-prompt-btn install" onclick="installPWA()">ติดตั้ง</button>
             <button class="pwa-prompt-btn cancel" onclick="closePWAPrompt()">ปิด</button>
@@ -491,7 +359,7 @@
         <div id="splash-logo" class="w-32 h-32 bg-emerald-500 rounded-[32px] flex items-center justify-center shadow-2xl shadow-emerald-500/30 mb-8">
             <i data-lucide="sprout" class="w-16 h-16 text-white"></i>
         </div>
-        <div class="splash-loader"></div>
+        <div class="splash-loader" aria-hidden></div>
         <p class="mt-6 text-emerald-400 font-medium tracking-widest text-xs uppercase">สวนลุงนะ Smart Farm</p>
     </div>
 
@@ -499,423 +367,10 @@
     <script>
         // Double-safety: hide splash 10s after body parsed
         setTimeout(() => {
-            var s = document.getElementById('splash-screen');
-            if (s && !s.classList.contains('fade-out')) {
-                s.classList.add('fade-out');
-                setTimeout(function() { s.style.display = 'none'; }, 500);
-            }
+            const s = document.getElementById('splash-screen');
+            if (s) { s.style.display = 'none'; }
         }, 10000);
     </script>
 
-    <!-- Toast Container -->
-    <div id="toastContainer" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none"></div>
-
-    <!-- Status Bar (Simplified) -->
-    <div class="tesla-status-bar flex justify-center py-4">
-        <span class="text-2xl font-bold text-white tracking-wider" id="currentTime">--:--</span>
-    </div>
-
-    <!-- Header -->
-    <div class="tesla-header">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-xl font-bold text-white">สวนลุงนะ</h1>
-                <p class="text-xs text-[#8E8E93] mt-0.5">Smart Farm Control Dashboard</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <!-- Connection Status -->
-                <div class="conn-badge">
-                    <span id="connDot" class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
-                    <span id="connText" class="text-[10px] font-semibold text-emerald-400">เชื่อมต่อ...</span>
-                </div>
-                <!-- ESP Status -->
-                <div class="conn-badge">
-                    <span id="espDot" class="w-2 h-2 rounded-full bg-rose-400 pulse-dot"></span>
-                    <span id="espStatus" class="text-[10px] font-semibold text-rose-400">Offline</span>
-                </div>
-                <!-- Settings -->
-                <button id="settingsBtn" class="w-9 h-9 rounded-full flex items-center justify-center bg-[#2C2C2E] border border-[#3A3A3C]">
-                    <i data-lucide="settings" class="w-4 h-4 text-white"></i>
-                </button>
-                <!-- Dark Mode -->
-                <button id="darkModeBtn" class="w-9 h-9 rounded-full flex items-center justify-center bg-[#2C2C2E] border border-[#3A3A3C]">
-                    <i data-lucide="moon" class="w-4 h-4 text-white"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============ PAGE: HOME ============ -->
-    <div id="page-home" class="page-section active">
-        <!-- Farm Visualization -->
-        <div class="farm-visual mb-6">
-            <div class="farm-ring"></div>
-            <div class="farm-ring"></div>
-            <div class="farm-ring"></div>
-            <div class="relative z-10 flex flex-col items-center">
-                <div class="w-28 h-28 rounded-full bg-gradient-to-br from-[#34D399] to-[#059669] flex items-center justify-center shadow-2xl shadow-emerald-500/50 mb-4 relative group">
-                    <i data-lucide="sprout" class="w-14 h-14 text-white group-hover:scale-110 transition-transform duration-500"></i>
-                    <div class="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#34D399] flex items-center justify-center border-2 border-[#1C1C1E] shadow-lg">
-                        <div class="w-2.5 h-2.5 rounded-full bg-white pulse-dot"></div>
-                    </div>
-                </div>
-                <h2 class="text-2xl font-extrabold text-white tracking-tight mb-1">สวนลุงนะ</h2>
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" id="currentMode">Manual Mode</span>
-                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5">
-                        <i data-lucide="wifi" class="w-3 h-3"></i>
-                        <span id="wifiStatusText">เชื่อมต่อแล้ว</span>
-                    </span>
-                </div>
-                <span class="text-xs text-[#8E8E93] font-medium opacity-80" id="currentDate">--</span>
-            </div>
-        </div>
-
-        <!-- Sensor Cards -->
-        <div class="px-5 mb-6">
-            <div class="grid grid-cols-2 gap-3">
-                <!-- Temperature -->
-                <div class="tesla-card">
-                    <div class="flex items-center gap-2 mb-3">
-                        <div class="w-8 h-8 rounded-full bg-[#FF3B30]/20 flex items-center justify-center">
-                            <i data-lucide="thermometer" class="w-4 h-4 text-[#FF3B30]"></i>
-                        </div>
-                        <span class="text-[10px] text-[#8E8E93] font-medium">อุณหภูมิ</span>
-                    </div>
-                    <div class="flex items-end gap-1">
-                        <span id="temperature" class="text-3xl font-bold text-white">--</span>
-                        <span class="text-sm text-[#8E8E93] mb-1">°C</span>
-                    </div>
-                    <div id="tempBar" class="mt-2 h-1.5 bg-[#3A3A3C] rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-[#FF3B30] to-[#FF9500] rounded-full transition-all duration-700" style="width:0%"></div>
-                    </div>
-                    <p class="text-[10px] text-[#8E8E93] mt-2">อัปเดต: <span id="tempTime" class="font-mono">--</span></p>
-                </div>
-
-                <!-- Humidity -->
-                <div class="tesla-card">
-                    <div class="flex items-center gap-2 mb-3">
-                        <div class="w-8 h-8 rounded-full bg-[#007AFF]/20 flex items-center justify-center">
-                            <i data-lucide="droplets" class="w-4 h-4 text-[#007AFF]"></i>
-                        </div>
-                        <span class="text-[10px] text-[#8E8E93] font-medium">ความชื้น</span>
-                    </div>
-                    <div class="flex items-end gap-1">
-                        <span id="humidity" class="text-3xl font-bold text-white">--</span>
-                        <span class="text-sm text-[#8E8E93] mb-1">%</span>
-                    </div>
-                    <div id="humBar" class="mt-2 h-1.5 bg-[#3A3A3C] rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-[#007AFF] to-[#5856D6] rounded-full transition-all duration-700" style="width:0%"></div>
-                    </div>
-                    <p class="text-[10px] text-[#8E8E93] mt-2">อัปเดต: <span id="humTime" class="font-mono">--</span></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mode Switch -->
-        <div class="px-5 mb-6">
-            <div class="tesla-card">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-[#34D399]/20 flex items-center justify-center">
-                            <i data-lucide="settings-2" class="w-5 h-5 text-[#34D399]"></i>
-                        </div>
-                        <span class="text-sm font-semibold text-white">โหมดการทำงาน</span>
-                    </div>
-                    <div class="mode-pill">
-                        <button id="manualModeBtn" class="active-mode">Manual</button>
-                        <button id="autoModeBtn">Auto</button>
-                    </div>
-                </div>
-                <p class="text-[10px] text-[#8E8E93] pl-[52px]">Manual = ควบคุมเอง | Auto = ใช้ตารางเวลา</p>
-            </div>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="px-5 mb-6">
-            <h2 class="text-xs font-semibold text-[#8E8E93] mb-3 uppercase tracking-wider">สถานะอุปกรณ์</h2>
-            <div class="grid grid-cols-4 gap-2">
-                <div class="tesla-card flex flex-col items-center py-3">
-                    <div class="w-8 h-8 rounded-full bg-[#007AFF]/20 flex items-center justify-center mb-1.5">
-                        <i data-lucide="waves" class="w-4 h-4 text-[#007AFF]"></i>
-                    </div>
-                    <span class="text-[9px] text-[#8E8E93]">ปั๊มน้ำ</span>
-                    <span id="pumpQuickStatus" class="text-[9px] text-emerald-400 font-semibold">ปิด</span>
-                </div>
-                <div class="tesla-card flex flex-col items-center py-3">
-                    <div class="w-8 h-8 rounded-full bg-[#34D399]/20 flex items-center justify-center mb-1.5">
-                        <i data-lucide="sprout" class="w-4 h-4 text-[#34D399]"></i>
-                    </div>
-                    <span class="text-[9px] text-[#8E8E93]">โซน 1</span>
-                    <span id="zone1QuickStatus" class="text-[9px] text-emerald-400 font-semibold">ปิด</span>
-                </div>
-                <div class="tesla-card flex flex-col items-center py-3">
-                    <div class="w-8 h-8 rounded-full bg-[#FF9500]/20 flex items-center justify-center mb-1.5">
-                        <i data-lucide="home" class="w-4 h-4 text-[#FF9500]"></i>
-                    </div>
-                    <span class="text-[9px] text-[#8E8E93]">ไฟบ้าน</span>
-                    <span id="lighthomeQuickStatus" class="text-[9px] text-emerald-400 font-semibold">ปิด</span>
-                </div>
-                <div class="tesla-card flex flex-col items-center py-3">
-                    <div class="w-8 h-8 rounded-full bg-[#FFD60A]/20 flex items-center justify-center mb-1.5">
-                        <i data-lucide="lightbulb" class="w-4 h-4 text-[#FFD60A]"></i>
-                    </div>
-                    <span class="text-[9px] text-[#8E8E93]">ไฟศาลา</span>
-                    <span id="lightsalaQuickStatus" class="text-[9px] text-emerald-400 font-semibold">ปิด</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============ PAGE: CONTROLS ============ -->
-    <div id="page-controls" class="page-section">
-        <!-- Quick Actions -->
-        <div class="px-5 mb-4">
-            <h2 class="text-sm font-semibold text-[#8E8E93] mb-3 uppercase tracking-wider">ควบคุมด่วน</h2>
-            <div class="flex gap-4">
-                <button onclick="allRelays(true)" class="flex-1 py-4 rounded-2xl bg-[#34D399] text-[#1C1C1E] text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95">
-                    <i data-lucide="power" class="w-4 h-4"></i> เปิดทั้งหมด
-                </button>
-                <button onclick="allRelays(false)" class="flex-1 py-4 rounded-2xl bg-[#FF3B30] text-white text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95">
-                    <i data-lucide="power-off" class="w-4 h-4"></i> ปิดทั้งหมด
-                </button>
-            </div>
-        </div>
-
-        <!-- Relay Cards -->
-        <div class="px-5 mb-6">
-            <h2 class="text-sm font-semibold text-[#8E8E93] mb-3 uppercase tracking-wider">อุปกรณ์</h2>
-            <div class="relay-grid">
-                <!-- Pump Card Premium -->
-                <div id="card-pump" class="tesla-card pump-card-premium flex flex-col">
-                    <div class="flex items-center justify-between w-full mb-4">
-                        <div class="flex items-center gap-2">
-                            <div id="pump-icon-bg" class="w-10 h-10 rounded-full bg-[#007AFF]/20 flex items-center justify-center transition-colors duration-500">
-                                <i data-lucide="waves" class="w-5 h-5 text-[#007AFF] pump-icon-svg"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-white">ระบบปั๊มน้ำ</h3>
-                                <div class="flex gap-1 mt-0.5">
-                                    <span id="pump-mqtt-badge" class="status-badge badge-mqtt-offline">MQTT</span>
-                                    <span id="pump-mode-badge" class="status-badge badge-mode-manual">Manual</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ios-toggle">
-                            <input type="checkbox" id="pumpToggle">
-                            <label for="pumpToggle" class="toggle-slider"></label>
-                        </div>
-                    </div>
-
-                    <!-- Animation Canvas (SVG) -->
-                    <div class="pump-svg-container">
-                        <svg viewBox="0 0 200 120" class="w-full h-full">
-                            <!-- Pipes -->
-                            <path d="M40 80 L160 80 L160 40" class="water-pipe" fill="none" />
-                            <path d="M40 80 L160 80 L160 40" class="water-flow" fill="none" />
-                            
-                            <!-- Pump Body -->
-                            <rect x="20" y="70" width="40" height="30" rx="4" fill="#3A3A3C" />
-                            <circle cx="40" cy="85" r="12" fill="#2C2C2E" stroke="#48484A" stroke-width="2" />
-                            
-                            <!-- Sprinkler -->
-                            <g transform="translate(160, 40)">
-                                <g class="sprinkler-head">
-                                    <line x1="-15" y1="0" x2="15" y2="0" stroke="#48484A" stroke-width="4" stroke-linecap="round" />
-                                    <circle cx="0" cy="0" r="5" fill="#3A3A3C" />
-                                    <!-- Droplets (Animated via CSS) -->
-                                    <circle class="droplet" cx="0" cy="0" r="2" style="--dx: -30px; --dy: -20px; animation-delay: 0s;" />
-                                    <circle class="droplet" cx="0" cy="0" r="2" style="--dx: 30px; --dy: -20px; animation-delay: 0.2s;" />
-                                    <circle class="droplet" cx="0" cy="0" r="2" style="--dx: -20px; --dy: -40px; animation-delay: 0.4s;" />
-                                    <circle class="droplet" cx="0" cy="0" r="2" style="--dx: 20px; --dy: -40px; animation-delay: 0.6s;" />
-                                </g>
-                            </g>
-                        </svg>
-                    </div>
-
-                    <div class="mt-auto pt-2 border-t border-[#3A3A3C] flex justify-between items-end">
-                        <div>
-                            <p id="pumpStatusText" class="text-xs font-bold text-[#8E8E93] transition-colors duration-300">หยุดรดน้ำ</p>
-                            <p id="pumpRuntime" class="text-[10px] text-[#8E8E93] mt-0.5">เวลาทำงาน: 00:00:00</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[9px] text-[#8E8E93]">ล่าสุด: <span id="pumpLastTime">--:--</span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Zone 1 -->
-                <div id="card-zone1" class="relay-card">
-                    <div class="flex items-center justify-between w-full">
-                        <div class="w-10 h-10 rounded-full bg-[#34D399]/20 flex items-center justify-center">
-                            <i data-lucide="sprout" class="w-5 h-5 text-[#34D399]"></i>
-                        </div>
-                        <div class="ios-toggle">
-                            <input type="checkbox" id="zone1Toggle">
-                            <label for="zone1Toggle" class="toggle-slider"></label>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-white">โซน 1</h3>
-                        <p id="zone1StatusText" class="text-[10px] text-[#8E8E93]">ปิด</p>
-                    </div>
-                </div>
-
-                <!-- Light Home -->
-                <div id="card-lighthome" class="relay-card">
-                    <div class="flex items-center justify-between w-full">
-                        <div class="w-10 h-10 rounded-full bg-[#FF9500]/20 flex items-center justify-center">
-                            <i data-lucide="home" class="w-5 h-5 text-[#FF9500]"></i>
-                        </div>
-                        <div class="ios-toggle">
-                            <input type="checkbox" id="lighthomeToggle">
-                            <label for="lighthomeToggle" class="toggle-slider"></label>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-white">ไฟบ้าน</h3>
-                        <p id="lighthomeStatusText" class="text-[10px] text-[#8E8E93]">ปิด</p>
-                    </div>
-                </div>
-
-                <!-- Light Sala -->
-                <div id="card-lightsala" class="relay-card">
-                    <div class="flex items-center justify-between w-full">
-                        <div class="w-10 h-10 rounded-full bg-[#FFD60A]/20 flex items-center justify-center">
-                            <i data-lucide="lightbulb" class="w-5 h-5 text-[#FFD60A]"></i>
-                        </div>
-                        <div class="ios-toggle">
-                            <input type="checkbox" id="lightsalaToggle">
-                            <label for="lightsalaToggle" class="toggle-slider"></label>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-white">ไฟศาลา</h3>
-                        <p id="lightsalaStatusText" class="text-[10px] text-[#8E8E93]">ปิด</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============ PAGE: SCHEDULE ============ -->
-    <div id="page-schedule" class="page-section">
-        <!-- Schedule Tabs -->
-        <div class="px-5 mb-4">
-            <div class="flex gap-2 overflow-x-auto pb-2">
-                <button class="sched-tab-btn sched-active flex-1 text-center" data-tab="pump">ปั๊มน้ำ</button>
-                <button class="sched-tab-btn flex-1 text-center" data-tab="zone1">โซน 1</button>
-                <button class="sched-tab-btn flex-1 text-center" data-tab="lighthome">ไฟบ้าน</button>
-                <button class="sched-tab-btn flex-1 text-center" data-tab="lightsala">ไฟศาลา</button>
-            </div>
-        </div>
-
-        <!-- Schedule Card -->
-        <div class="px-5 mb-6">
-            <div class="tesla-card">
-                <div class="flex items-center justify-between mb-5">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-[#5856D6]/20 flex items-center justify-center">
-                            <i data-lucide="clock" class="w-5 h-5 text-[#5856D6]"></i>
-                        </div>
-                        <span class="text-sm font-semibold text-white">ตั้งเวลาการทำงาน</span>
-                    </div>
-                    <label class="ios-toggle">
-                        <input type="checkbox" id="schedEnable">
-                        <label for="schedEnable" class="toggle-slider"></label>
-                    </label>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <label class="block text-[10px] text-[#8E8E93] font-medium mb-2">เวลาเปิด</label>
-                        <input type="time" id="schedOn" class="sched-input">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-[#8E8E93] font-medium mb-2">เวลาปิด</label>
-                        <input type="time" id="schedOff" class="sched-input">
-                    </div>
-                </div>
-
-                <p id="schedSummary" class="text-xs text-[#8E8E93] text-center py-3">ยังไม่เปิดใช้งานตารางเวลา</p>
-
-                <div class="flex gap-3 mt-4">
-                    <button onclick="saveSchedule()" class="flex-1 py-3 rounded-xl bg-[#34D399] text-[#1C1C1E] text-sm font-bold active:scale-95 transition-all">บันทึก</button>
-                    <button onclick="deleteSchedule()" class="flex-1 py-3 rounded-xl bg-[#FF3B30]/20 text-[#FF3B30] text-sm font-bold active:scale-95 transition-all border border-[#FF3B30]/30">ลบ</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============ PAGE: ACTIVITY ============ -->
-    <div id="page-activity" class="page-section">
-        <div class="px-5">
-            <div class="tesla-card">
-                <div class="flex items-center gap-3 mb-5">
-                    <div class="w-10 h-10 rounded-full bg-[#AF52DE]/20 flex items-center justify-center">
-                        <i data-lucide="history" class="w-5 h-5 text-[#AF52DE]"></i>
-                    </div>
-                    <span class="text-sm font-semibold text-white">ประวัติกิจกรรม</span>
-                </div>
-                <div id="activityLog" class="max-h-80 overflow-y-auto">
-                    <p class="text-xs text-[#8E8E93] text-center py-8">ยังไม่มีกิจกรรม</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <div class="nav-item active" data-page="home">
-            <i data-lucide="home" class="w-5 h-5"></i>
-            <span>หน้าหลัก</span>
-        </div>
-        <div class="nav-item" data-page="controls">
-            <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
-            <span>ควบคุม</span>
-        </div>
-        <div class="nav-item" data-page="schedule">
-            <i data-lucide="calendar" class="w-5 h-5"></i>
-            <span>ตั้งเวลา</span>
-        </div>
-        <div class="nav-item" data-page="activity">
-            <i data-lucide="history" class="w-5 h-5"></i>
-            <span>ประวัติ</span>
-        </div>
-    </nav>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-handle"></div>
-            <h3 class="text-lg font-bold text-white mb-4">ตั้งค่า MQTT</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs text-[#8E8E93] mb-1">Server URL</label>
-                    <input type="text" id="mqttUrl" class="sched-input" value="wss://650188a0ee2b4367b7c131fb385590a9.s1.eu.hivemq.cloud:8884/mqtt">
-                </div>
-                <div>
-                    <label class="block text-xs text-[#8E8E93] mb-1">Username</label>
-                    <input type="text" id="mqttUser" class="sched-input" value="smartfarm">
-                </div>
-                <div>
-                    <label class="block text-xs text-[#8E8E93] mb-1">Password</label>
-                    <input type="password" id="mqttPass" class="sched-input" value="Kla12345">
-                </div>
-                <div class="flex gap-3 mt-6">
-                    <button onclick="applyMqttSettings()" class="flex-1 py-3 rounded-xl bg-[#34D399] text-[#1C1C1E] text-sm font-bold active:scale-95 transition-all">บันทึก</button>
-                    <button onclick="closeSettingsModal()" class="flex-1 py-3 rounded-xl bg-[#3A3A3C] text-white text-sm font-bold active:scale-95 transition-all">ยกเลิก</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/mqtt@5.0.0/dist/mqtt.min.js"></script>
-    <script src="config.js"></script>
-    <script src="mqtt-handler.js"></script>
-    <script src="animation.js"></script>
-    <script src="pump-controller.js"></script>
-    <script src="ui-controller.js"></script>
-    <script src="script.js"></script>
 </body>
 </html>
