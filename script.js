@@ -1,215 +1,248 @@
 // Smart Farm Dashboard - Main Logic (UI & Coordination)
 
-document.addEventListener("DOMContentLoaded", () => {
+(function(){
+    // Utility: safe getElement
     const $ = id => document.getElementById(id);
 
-    // ==================== PAGE NAVIGATION ====================
-    document.querySelectorAll(".nav-item").forEach(item => {
-        item.addEventListener("click", () => {
-            document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-            item.classList.add("active");
-            const page = item.dataset.page;
-            document.querySelectorAll(".page-section").forEach(p => p.classList.remove("active"));
-            document.getElementById("page-" + page).classList.add("active");
-        });
-    });
-
-    // ==================== SETTINGS MODAL ====================
-    document.getElementById("settingsBtn").addEventListener("click", () => {
-        document.getElementById("settingsModal").classList.add("show");
-    });
-
-    window.closeSettingsModal = () => {
-        document.getElementById("settingsModal").classList.remove("show");
-    };
-
-    window.applyMqttSettings = () => {
-        MQTT_CONFIG.url = $("mqttUrl").value;
-        MQTT_CONFIG.username = $("mqttUser").value;
-        MQTT_CONFIG.password = $("mqttPass").value;
-        showToast("บันทึกการตั้งค่า MQTT แล้ว กำลังเชื่อมต่อใหม่...", "info");
-        closeSettingsModal();
-        window.mqttHandler.connect();
-    };
-
-    // ==================== TOAST NOTIFICATIONS ====================
-    window.showToast = function(message, type = "info", duration = 3000) {
-        const container = $("toastContainer");
-        if (!container) return;
-        
-        const toast = document.createElement("div");
-        const colors = {
-            success: "bg-gradient-to-r from-emerald-500 to-green-600",
-            error: "bg-gradient-to-r from-rose-500 to-red-600",
-            info: "bg-gradient-to-r from-blue-500 to-cyan-600",
-            warning: "bg-gradient-to-r from-amber-500 to-orange-600"
+    // Debounce helper
+    function debounce(fn, wait){
+        let t;
+        return function(...args){
+            clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, args), wait);
         };
-        toast.className = `toast-enter pointer-events-auto px-5 py-3 rounded-2xl shadow-xl text-white text-sm font-semibold ${colors[type] || colors.info} flex items-center gap-2`;
-        
-        const icon = document.createElement("i");
-        icon.setAttribute("data-lucide", 
-            type === "success" ? "check-circle" :
-            type === "error" ? "alert-circle" :
-            type === "warning" ? "alert-triangle" : "info"
-        );
-        icon.className = "w-4 h-4";
-        
-        const textSpan = document.createElement("span");
-        textSpan.textContent = message;
-        
-        toast.appendChild(icon);
-        toast.appendChild(textSpan);
-        container.appendChild(toast);
-        
-        if (window.lucide) lucide.createIcons();
-        
-        setTimeout(() => {
-            toast.className = toast.className.replace("toast-enter", "toast-exit");
-            setTimeout(() => toast.remove(), 300);
-        }, duration);
-    };
-
-    // ==================== ACTIVITY LOG ====================
-    let activityLog = [];
-    window.addActivity = function(message, type = "info") {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        activityLog.unshift({ time: timeStr, message, type });
-        if (activityLog.length > 50) activityLog.pop();
-        renderActivityLog();
-    };
-
-    function renderActivityLog() {
-        const container = $("activityLog");
-        if (!container) return;
-        if (activityLog.length === 0) {
-            container.innerHTML = '<p class="text-xs text-[#8E8E93] text-center py-8">ยังไม่มีกิจกรรม</p>';
-            return;
-        }
-        const icons = { relay: "power", mode: "settings-2", sensor: "thermometer", schedule: "calendar", connection: "wifi", error: "alert-circle" };
-        container.innerHTML = activityLog.slice(0, 20).map(a => {
-            const icon = icons[a.type] || "info";
-            const colorMap = { relay: "text-emerald-400", mode: "text-purple-400", sensor: "text-blue-400", schedule: "text-amber-400", connection: "text-indigo-400", error: "text-rose-400" };
-            return `<div class="log-item">
-                <span class="text-[10px] text-[#8E8E93] font-mono w-14 flex-shrink-0">${a.time}</span>
-                <i data-lucide="${icon}" class="w-4 h-4 ${colorMap[a.type] || 'text-[#8E8E93]'} flex-shrink-0"></i>
-                <span class="text-xs text-white flex-1">${a.message}</span>
-            </div>`;
-        }).join("");
-        if (window.lucide) lucide.createIcons();
     }
 
-    // ==================== MQTT STATUS UI ====================
-    window.addEventListener('mqtt:connected', (e) => {
-        const isConnected = e.detail;
-        const dot = $("connDot");
-        const label = $("connText");
-        const wifiText = $("wifiStatusText");
-        
-        if (label) label.textContent = isConnected ? "เชื่อมต่อแล้ว" : "ขาดการเชื่อมต่อ";
-        if (wifiText) wifiText.textContent = isConnected ? "เชื่อมต่อแล้ว" : "ขาดการเชื่อมต่อ";
-        
-        const color = isConnected ? "emerald" : "rose";
-        if (dot) dot.className = `w-2 h-2 rounded-full pulse-dot bg-${color}-400`;
-        if (label) label.className = `text-[10px] font-semibold text-${color}-400`;
-        
-        if (wifiText) {
-            const badge = wifiText.parentElement;
-            badge.className = `px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-${color}-500/10 text-${color}-400 border border-${color}-500/20 flex items-center gap-1.5`;
-        }
+    // Ensure we only initialize once
+    if (window.__ui_initialized) return;
+    window.__ui_initialized = true;
 
-        if (isConnected) {
-            showToast("เชื่อมต่อ MQTT สำเร็จ", "success");
-            addActivity("เชื่อมต่อ MQTT สำเร็จ", "connection");
-        } else {
-            showToast("ขาดการเชื่อมต่อ MQTT", "error");
-            addActivity("ขาดการเชื่อมต่อ MQTT", "error");
-        }
-    });
-
-    // ==================== ALL RELAYS ====================
-    window.allRelays = (state) => {
-        const action = state ? "เปิด" : "ปิด";
-        RELAYS.forEach(relay => {
-            window.mqttHandler.publish(MQTT_CONFIG.topics.relaySet(relay), state ? "ON" : "OFF");
-        });
-        showToast(`${action}อุปกรณ์ทั้งหมดแล้ว`, "success");
-        addActivity(`${action}อุปกรณ์ทั้งหมด`, "relay");
-    };
-
-    // ==================== REAL-TIME CLOCK ====================
-    function startClock() {
-        setInterval(() => {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
-            const dateStr = now.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
-            const [h, m] = timeStr.split(":");
-            const seconds = now.getSeconds();
-            const blink = seconds % 2 === 0 ? "opacity-100" : "opacity-30";
-            
-            if ($("currentTime")) $("currentTime").innerHTML = `<span class="font-mono">${h}<span class="${blink} transition-opacity duration-500">:</span>${m}</span>`;
-            if ($("currentDate")) $("currentDate").textContent = dateStr;
-        }, 1000);
-    }
-    startClock();
-
-    // ==================== INITIALIZATION ====================
-    // Start MQTT
-    window.mqttHandler.connect();
-    
-    // Lucide icons
-    if (window.lucide) lucide.createIcons();
-
-    // Schedule logic (simplified for now, keeping existing functionality)
-    let currentSchedTab = "pump";
-    window.switchSchedTab = (relay) => {
-        currentSchedTab = relay;
-        document.querySelectorAll(".sched-tab-btn").forEach(btn => {
-            btn.classList.toggle("sched-active", btn.dataset.tab === relay);
-        });
-        // In a real app, we'd fetch current schedule data here
-    };
-
-    window.saveSchedule = () => {
-        const data = {
-            enabled: $("schedEnable").checked,
-            on: $("schedOn").value || "00:00",
-            off: $("schedOff").value || "00:00"
+    document.addEventListener("DOMContentLoaded", () => {
+        // Cache DOM references
+        const dom = {
+            connDot: $('connDot'),
+            connText: $('connText'),
+            wifiStatusText: $('wifiStatusText'),
+            espDot: $('espDot'),
+            espStatus: $('espStatus'),
+            pumpCard: $('card-pump'),
+            pumpToggle: $('pumpToggle'),
+            pumpStatusText: $('pumpStatusText'),
+            pumpLastTime: $('pumpLastTime'),
+            pumpQuickStatus: $('pumpQuickStatus'),
+            zone1Toggle: $('zone1Toggle'),
+            lighthomeToggle: $('lighthomeToggle'),
+            lightsalaToggle: $('lightsalaToggle'),
+            zone1StatusText: $('zone1StatusText'),
+            lighthomeStatusText: $('lighthomeStatusText'),
+            lightsalaStatusText: $('lightsalaStatusText'),
+            connTextHeader: $('connTextHeader'),
+            connDotHeader: $('connDotHeader')
         };
-        window.mqttHandler.publish(MQTT_CONFIG.topics.scheduleSet(currentSchedTab), JSON.stringify(data), { retain: true });
-        showToast(`บันทึกตารางเวลา ${RELAY_NAMES[currentSchedTab]} แล้ว`, "success");
-        addActivity(`ตั้งค่าตารางเวลา ${RELAY_NAMES[currentSchedTab]}`, "schedule");
-    };
-});
 
-    // ==================== DARK MODE ====================
-    const darkModeBtn = $("darkModeBtn");
-    if (darkModeBtn) {
-        darkModeBtn.addEventListener("click", () => {
-            document.documentElement.classList.toggle("dark");
-            const isDark = document.documentElement.classList.contains("dark");
-            darkModeBtn.innerHTML = isDark ? '<i data-lucide="sun" class="w-4 h-4 text-white"></i>' : '<i data-lucide="moon" class="w-4 h-4 text-white"></i>';
-            if (window.lucide) lucide.createIcons();
-            localStorage.setItem("darkMode", isDark ? "dark" : "light");
-        });
-    }
+        // Guard missing DOM (graceful)
+        Object.keys(dom).forEach(k => { if (!dom[k]) dom[k] = null; });
 
-    // Load saved dark mode
-    if (localStorage.getItem("darkMode") === "light") {
-        document.documentElement.classList.remove("dark");
-        if (darkModeBtn) darkModeBtn.innerHTML = '<i data-lucide="moon" class="w-4 h-4 text-white"></i>';
-    } else {
-        document.documentElement.classList.add("dark");
-        if (darkModeBtn) darkModeBtn.innerHTML = '<i data-lucide="sun" class="w-4 h-4 text-white"></i>';
-    }
-
-    // ==================== PWA & SPLASH ====================
-    window.addEventListener('load', () => {
-        const splash = $("splash-screen");
-        if (splash) {
-            setTimeout(() => {
-                splash.classList.add("fade-out");
-                setTimeout(() => splash.style.display = "none", 500);
-            }, 1500);
+        // Small helper to format time
+        function timeNow(){
+            const d = new Date();
+            return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
-    });
+
+        // Update quick status UI
+        function updateQuickStatus(relay, on){
+            const map = {
+                pump: dom.pumpQuickStatus,
+                zone1: $('zone1QuickStatus'),
+                lighthome: $('lighthomeQuickStatus'),
+                lightsala: $('lightsalaQuickStatus')
+            };
+            const el = map[relay];
+            if (!el) return;
+            el.textContent = on ? 'เปิด' : 'ปิด';
+            el.className = on ? 'text-[9px] text-emerald-400 font-semibold' : 'text-[9px] text-[#8E8E93] font-semibold';
+        }
+
+        // Central UI updater (debounced) to avoid DOM thrashing
+        const applyRelayUi = debounce((relay, status) => {
+            // Update APP_STATE
+            APP_STATE.relays[relay] = !!status;
+
+            // Pump
+            if (relay === 'pump'){
+                if (dom.pumpToggle) dom.pumpToggle.checked = status;
+                if (dom.pumpStatusText) dom.pumpStatusText.textContent = status ? 'กำลังรดน้ำ...' : 'หยุดรดน้ำ';
+                if (dom.pumpLastTime) dom.pumpLastTime.textContent = timeNow();
+                updateQuickStatus('pump', status);
+                // trigger animation controller if available
+                if (window.animationController && typeof window.animationController.setPumpState === 'function'){
+                    window.animationController.setPumpState(status ? 'running' : 'idle');
+                }
+            }
+
+            // Zone1
+            if (relay === 'zone1'){
+                if (dom.zone1Toggle) dom.zone1Toggle.checked = status;
+                if (dom.zone1StatusText) dom.zone1StatusText.textContent = status ? 'เปิด' : 'ปิด';
+                updateQuickStatus('zone1', status);
+            }
+
+            // Light home
+            if (relay === 'lighthome'){
+                if (dom.lighthomeToggle) dom.lighthomeToggle.checked = status;
+                if (dom.lighthomeStatusText) dom.lighthomeStatusText.textContent = status ? 'เปิด' : 'ปิด';
+                updateQuickStatus('lighthome', status);
+            }
+
+            // Light sala
+            if (relay === 'lightsala'){
+                if (dom.lightsalaToggle) dom.lightsalaToggle.checked = status;
+                if (dom.lightsalaStatusText) dom.lightsalaStatusText.textContent = status ? 'เปิด' : 'ปิด';
+                updateQuickStatus('lightsala', status);
+            }
+
+        }, 80);
+
+        // Attach toggle handlers (publish commands)
+        function attachToggle(id, relay){
+            const el = $(id);
+            if (!el) return;
+            // avoid duplicate listeners
+            if (el.__bound) return;
+            el.__bound = true;
+
+            el.addEventListener('change', (e) => {
+                const on = e.target.checked;
+                // Publish ON/OFF preserving topics
+                if (window.mqttHandler && MQTT_CONFIG){
+                    const topic = MQTT_CONFIG.topics.relaySet(relay);
+                    const payload = on ? 'ON' : 'OFF';
+                    window.mqttHandler.publish(topic, payload);
+                    addActivity(`${on ? 'สั่งเปิด' : 'สั่งปิด'} ${RELAY_NAMES[relay]}`, 'relay');
+                    // reflect immediately for snappy UI; real state will come from device status
+                    applyRelayUi(relay, on);
+                } else {
+                    showToast('MQTT ยังไม่เชื่อมต่อ', 'warning');
+                    // revert toggle if not connected
+                    setTimeout(() => { el.checked = !on; }, 200);
+                }
+            });
+        }
+
+        attachToggle('pumpToggle', 'pump');
+        attachToggle('zone1Toggle', 'zone1');
+        attachToggle('lighthomeToggle', 'lighthome');
+        attachToggle('lightsalaToggle', 'lightsala');
+
+        // ==================== MQTT EVENT HANDLERS ====================
+        // Relay status updates from mqtt-handler -> dispatchEvent('relay:status', { relay, status })
+        function onRelayStatus(e){
+            try{
+                const { relay, status } = e.detail;
+                if (!relay) return;
+                applyRelayUi(relay, !!status);
+            } catch(err){ console.error(err); }
+        }
+
+        // ESP online/offline handling with timeout
+        let espTimeout = null;
+        function onEspStatus(e){
+            const online = !!e.detail;
+            APP_STATE.espOnline = online;
+            if (dom.espDot) dom.espDot.className = `w-2 h-2 rounded-full pulse-dot bg-${online ? 'emerald' : 'rose'}-400`;
+            if (dom.espStatus) { dom.espStatus.textContent = online ? 'Online' : 'Offline'; dom.espStatus.className = `text-[10px] font-semibold text-${online ? 'emerald' : 'rose'}-400`; }
+
+            if (online){
+                addActivity('ESP online', 'connection');
+                // reset timeout: expect next heartbeat in 35s
+                if (espTimeout) clearTimeout(espTimeout);
+                espTimeout = setTimeout(()=>{
+                    APP_STATE.espOnline = false;
+                    if (dom.espDot) dom.espDot.className = `w-2 h-2 rounded-full pulse-dot bg-rose-400`;
+                    if (dom.espStatus) { dom.espStatus.textContent = 'Offline'; dom.espStatus.className = 'text-[10px] font-semibold text-rose-400'; }
+                    addActivity('ESP heartbeat lost', 'error');
+                }, 35000);
+            } else {
+                addActivity('ESP offline', 'error');
+            }
+        }
+
+        // MQTT connection status (handled elsewhere too)
+        function onMqttConnected(e){
+            const connected = !!e.detail;
+            APP_STATE.mqttConnected = connected;
+            if (dom.connDot) dom.connDot.className = `w-2 h-2 rounded-full pulse-dot bg-${connected ? 'emerald' : 'rose'}-400`;
+            if (dom.connText) { dom.connText.textContent = connected ? 'เชื่อมต่อแล้ว' : 'ขาดการเชื่อมต่อ'; dom.connText.className = `text-[10px] font-semibold text-${connected ? 'emerald' : 'rose'}-400`; }
+            if (dom.connDotHeader) dom.connDotHeader.className = `w-2 h-2 rounded-full pulse-dot bg-${connected ? 'emerald' : 'rose'}-400`;
+            if (dom.connTextHeader) dom.connTextHeader.textContent = connected ? 'Connected' : 'Disconnected';
+
+            if (connected){
+                showToast('เชื่อมต่อ MQTT สำเร็จ', 'success');
+            } else {
+                showToast('ขาดการเชื่อมต่อ MQTT', 'error');
+            }
+        }
+
+        // Subscribe once to window events (prevent duplicates)
+        if (!window.__mqtt_ui_listeners_attached){
+            window.addEventListener('relay:status', onRelayStatus);
+            window.addEventListener('esp:status', onEspStatus);
+            window.addEventListener('mqtt:connected', onMqttConnected);
+            window.__mqtt_ui_listeners_attached = true;
+        }
+
+        // Start clock (already present elsewhere, keep but ensure single interval)
+        if (!window.__clock_started){
+            function startClock(){
+                setInterval(() => {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false });
+                    const dateStr = now.toLocaleDateString("th-TH", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
+                    const [h, m] = timeStr.split(":");
+                    const seconds = now.getSeconds();
+                    const blink = seconds % 2 === 0 ? "opacity-100" : "opacity-30";
+                    const ct = $('currentTime'); if (ct) ct.innerHTML = `<span class="font-mono">${h}<span class="${blink} transition-opacity duration-500">:</span>${m}</span>`;
+                    const cd = $('currentDate'); if (cd) cd.textContent = dateStr;
+                }, 1000);
+            }
+            startClock();
+            window.__clock_started = true;
+        }
+
+        // Initialization: request mqttHandler to connect (mqtt-handler will handle reconnection logic)
+        if (window.mqttHandler && typeof window.mqttHandler.connect === 'function'){
+            // small delay to ensure events are attached
+            setTimeout(()=> window.mqttHandler.connect(), 50);
+        }
+
+        // Lucide icons
+        if (window.lucide) lucide.createIcons();
+
+        // Attach schedule tab buttons
+        document.querySelectorAll('.sched-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.sched-tab-btn').forEach(b => b.classList.remove('sched-active'));
+                btn.classList.add('sched-active');
+                const relay = btn.dataset.tab;
+                window.switchSchedTab && window.switchSchedTab(relay);
+            });
+        });
+
+        // Mode buttons
+        const manualBtn = $('manualModeBtn');
+        const autoBtn = $('autoModeBtn');
+        if (manualBtn && autoBtn){
+            manualBtn.addEventListener('click', ()=>{
+                APP_STATE.mode = 'manual';
+                manualBtn.classList.add('active-mode'); autoBtn.classList.remove('active-mode');
+                window.mqttHandler && window.mqttHandler.publish && window.mqttHandler.publish(MQTT_CONFIG.topics.modeSet, 'MANUAL');
+            });
+            autoBtn.addEventListener('click', ()=>{
+                APP_STATE.mode = 'auto';
+                autoBtn.classList.add('active-mode'); manualBtn.classList.remove('active-mode');
+                window.mqttHandler && window.mqttHandler.publish && window.mqttHandler.publish(MQTT_CONFIG.topics.modeSet, 'AUTO');
+            });
+        }
+
+    }); // DOMContentLoaded
+})();
