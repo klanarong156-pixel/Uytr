@@ -1,84 +1,49 @@
-/* Premium enhancements: Glass UI, animated chips, gradient borders, premium toggles
-   Optimized for GPU compositing (transform/opacity only), respects prefers-reduced-motion
-*/
-:root{
-  --glass-bg: rgba(28,28,30,0.5);
-  --glass-border: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(56,189,248,0.06));
-  --accent: #34D399;
-  --accent-2: #059669;
-  --card-radius: 20px;
-  --soft-shadow: 0 12px 40px rgba(0,0,0,0.45);
-  --transition: 280ms cubic-bezier(.22,1,.36,1);
+/* PREMIUM STYLES - ANIMATIONS REMOVED (static UI only) */
+
+:root {
+    --glass-blur: 20px;
+    --glow-color: #34D399;
 }
 
-/* Promote cards to their own layer to avoid repaint thrash */
-.tesla-card, .relay-card, .glass-card{
-  will-change: transform, opacity;
-  backface-visibility: hidden;
+.glass-card {
+    background: rgba(44,44,46,0.4);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.1);
 }
 
-/* Frosted glass base */
-.glass-card{
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  backdrop-filter: blur(14px) saturate(120%);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
-  border-radius: var(--card-radius);
-  border: 1px solid rgba(255,255,255,0.04);
-  box-shadow: var(--soft-shadow);
-  transition: transform var(--transition), box-shadow var(--transition);
+.glass-card:hover {
+    background: rgba(44,44,46,0.5);
+    border-color: rgba(52,211,153,0.4);
 }
 
-/* Gradient border accent */
-.glass-border{
-  position: relative;
-  border-radius: calc(var(--card-radius) + 4px);
-  padding: 1px;
-  background: var(--glass-border);
+.login-overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(28,28,30,0.95) 0%, rgba(28,28,30,0.98) 100%);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    visibility: visible;
 }
 
-/* Animated status chips */
-.status-chip{
-  display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-weight:700;font-size:11px;color:#fff;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);transition:all var(--transition);will-change:transform,opacity;
+.login-overlay.hidden { display: none; pointer-events: none; }
+
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    padding: 40px;
+    background: rgba(44,44,46,0.4);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
 }
 
-.status-chip .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px rgba(0,0,0,0.4);}
-.status-chip.mqtt-online{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#081014}
-.status-chip.mqtt-online .dot{background:#004d2e;box-shadow:0 0 12px rgba(52,211,153,0.35)}
-.status-chip.mqtt-offline{background:rgba(255,255,255,0.03);color:#8E8E93;border:1px solid rgba(255,255,255,0.03)}
+.login-logo { box-shadow: 0 0 40px rgba(52,211,153,0.3); }
 
-/* Animated pulsing dot for online indicator */
-.pulse-dot{
-  position:relative;
-}
-.pulse-dot::after{
-  content:'';position:absolute;inset:0;border-radius:999px;opacity:0;transform:scale(1);background:currentColor;transition:opacity .2s ease;
-}
-.pulse-anim{animation:pulse 1600ms infinite cubic-bezier(.2,.8,.2,1);}
-@keyframes pulse{0%{transform:scale(.95);opacity:.9}50%{transform:scale(1.15);opacity:.55}100%{transform:scale(.95);opacity:.9}}
+/* Removed @keyframes and animation/transition rules for static UI */
 
-/* Premium toggle (modern, iOS-like but GPU-accelerated) */
-.premium-toggle{position:relative;width:56px;height:32px;border-radius:32px;background:rgba(0,0,0,0.25);display:inline-block;transition:background var(--transition);border:1px solid rgba(255,255,255,0.04)}
-.premium-toggle .thumb{position:absolute;top:50%;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;transform:translateY(-50%);transition:transform var(--transition), box-shadow var(--transition);box-shadow:0 6px 18px rgba(0,0,0,0.45)}
-.premium-toggle.checked{background:linear-gradient(90deg,var(--accent),var(--accent-2));}
-.premium-toggle.checked .thumb{transform:translateY(-50%) translateX(24px);box-shadow:0 8px 22px rgba(52,211,153,0.25)}
-
-/* Ripple effect for touch feedback */
-.ripple-effect{position:absolute;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none;transform:scale(0);opacity:0.8;will-change:transform,opacity;animation:ripple 700ms cubic-bezier(.22,1,.36,1) forwards}
-@keyframes ripple{to{transform:scale(1);opacity:0}}
-
-/* Pump specific glow helpers (non-invasive) */
-.glow-emerald{box-shadow:0 0 30px rgba(52,211,153,0.18), inset 0 1px 1px rgba(255,255,255,0.04)}
-.pulse-glow{animation: pulse-glow 2200ms infinite ease-in-out}
-@keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(52,211,153,0.2)}50%{box-shadow:0 0 36px rgba(52,211,153,0.34)}}
-
-/* Pump ripple (created by animation.js) */
-.pump-ripple{position:absolute;width:80px;height:80px;border-radius:50%;border:2px solid rgba(52,211,153,0.25);left:0;top:0;transform:translate(-50%,-50%) scale(0.1);opacity:0.9;animation:pumpRipple 1000ms ease-out forwards;pointer-events:none}
-@keyframes pumpRipple{to{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
-
-/* Accessibility: respect reduced motion */
-@media (prefers-reduced-motion: reduce){
-  .pulse-anim, .pulse-glow, .ripple-effect, .pump-ripple, .premium-toggle .thumb{animation:none;transition:none}
-}
-
-/* Performance: avoid expensive selectors */
-/* End of premium enhancements */
