@@ -42,13 +42,15 @@ class PumpController {
     }
 
     requestToggle(isOn) {
-        // Set temporary state (static, no animation)
+        // Removed visual spring/animation calls
+
+        // 1. Set temporary state
         this.setState('connecting');
         
-        // Publish to MQTT (unchanged)
+        // 2. Publish to MQTT (preserve topics exactly)
         window.mqttHandler.publish(MQTT_CONFIG.topics.relaySet('pump'), isOn ? 'ON' : 'OFF');
 
-        // Safety timeout: if no response from MQTT in 5 seconds, revert
+        // 3. Safety timeout: if no response from MQTT in 5 seconds, revert
         clearTimeout(this.safetyTimeout);
         this.safetyTimeout = setTimeout(() => {
             if (this.state === 'connecting') {
@@ -90,10 +92,9 @@ class PumpController {
 
     setState(state) {
         this.state = state;
-        // Update static UI state without any animations
-        const statusText = document.getElementById('pumpStatusText');
-        const iconBg = document.getElementById('pump-icon-bg');
 
+        // Static UI updates only (no animations)
+        const statusText = document.getElementById('pumpStatusText');
         if (statusText) {
             if (state === 'running') statusText.textContent = 'กำลังรดน้ำ...';
             else if (state === 'connecting') statusText.textContent = 'กำลังเชื่อมต่อ...';
@@ -101,11 +102,17 @@ class PumpController {
             else statusText.textContent = 'หยุดรดน้ำ';
         }
 
-        if (iconBg) {
-            if (state === 'running') iconBg.style.backgroundColor = '#3B82F6';
-            else if (state === 'connecting') iconBg.style.backgroundColor = '#F59E0B';
-            else if (state === 'error') iconBg.style.backgroundColor = '#EF4444';
-            else iconBg.style.backgroundColor = '';
+        const card = document.getElementById('card-pump');
+        if (card) {
+            card.classList.remove('state-idle', 'state-connecting', 'state-running', 'state-error');
+            card.classList.add(`state-${state}`);
+        }
+
+        // Update mode/LED static classes if needed
+        const mqttBadge = document.getElementById('pump-mqtt-badge');
+        if (mqttBadge) {
+            // keep existing class but do not add animation classes
+            mqttBadge.classList.remove('pulse-dot');
         }
     }
 
@@ -129,9 +136,12 @@ class PumpController {
     }
 
     stopTimer() {
-        clearInterval(this.runtimeInterval);
-        this.runtimeInterval = null;
+        if (this.runtimeInterval) {
+            clearInterval(this.runtimeInterval);
+            this.runtimeInterval = null;
+        }
     }
 }
 
+// Initialize controller
 window.pumpController = new PumpController();

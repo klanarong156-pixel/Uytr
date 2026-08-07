@@ -1,9 +1,8 @@
-/* Tesla-style Smart Farm Dashboard Styles */
-/* This file provides additional polish on top of the inline styles in index.html */
+/* Tesla-style Smart Farm Dashboard Styles (animations removed) */
 
-/* Smooth transitions for all interactive elements */
+/* Smooth interactions disabled — static UI only */
 button, a, input, label {
-    transition: all 0.2s ease;
+    /* transitions removed for static UI */
 }
 
 /* Safe area padding for iPhone notch */
@@ -17,64 +16,12 @@ body {
     padding-bottom: calc(28px + env(safe-area-inset-bottom));
 }
 
-/* Card hover effect for desktop */
+/* Relay card hover - keep static border change on hover without transition */
 @media (hover: hover) {
     .tesla-card:hover {
         border-color: rgba(52, 211, 153, 0.4);
         box-shadow: 0 4px 20px rgba(52, 211, 153, 0.1);
     }
-}
-
-/* Relay card hover */
-@media (hover: hover) {
-    .relay-card:hover {
-        border-color: rgba(52, 211, 153, 0.3);
-    }
-}
-
-/* Input styling override for dark theme */
-input[type="time"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-}
-
-/* Scrollbar for activity log */
-#activityLog::-webkit-scrollbar {
-    width: 3px;
-}
-
-#activityLog::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#activityLog::-webkit-scrollbar-thumb {
-    background: #48484A;
-    border-radius: 3px;
-}
-
-/* Toast container z-index fix */
-#toastContainer {
-    z-index: 200;
-}
-
-/* Animation for page transitions */
-.page-section.active {
-    animation: fadeSlideIn 0.3s ease;
-}
-
-@keyframes fadeSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Farm ring animation enhancement */
-.farm-ring {
-    border-style: dashed;
 }
 
 /* Prevent text selection on app-like feel */
@@ -88,7 +35,7 @@ input, textarea {
     user-select: text;
 }
 
-/* Haptic-like feedback simulation */
+/* Haptic-like feedback simulation (instant) */
 button:active {
     opacity: 0.8;
 }
@@ -99,167 +46,25 @@ button:active {
     letter-spacing: 0.5px;
 }
 
-/* Gradient accent for active elements */
-.gradient-accent {
-    background: linear-gradient(135deg, #34D399, #059669);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* Print styles */
-@media print {
-    .bottom-nav, .tesla-status-bar, .tesla-header { display: none; }
-    body { background: white; color: black; }
-    .tesla-card, .relay-card { border: 1px solid #ccc; background: white; }
-}
-
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
-    * { 
-        animation-duration: 0.01ms !important; 
-        transition-duration: 0.01ms !important; 
-    }
-    .farm-ring { animation: none; opacity: 0.3; }
+    * { }
 }
 
-/* Dark mode compatibility (keeps dark class working) */
+/* Dark mode compatibility */
 .dark body {
     background-color: #1C1C1E;
     color: #FFFFFF;
 }
 
-/* Ensure all tesla elements stay consistent */
-.dark .tesla-card { background: #2C2C2E; border-color: #3A3A3C; }
-.dark .relay-card { background: #2C2C2E; border-color: #3A3A3C; }
-.dark .mode-pill { background: #2C2C2E; border-color: #3A3A3C; }
-.dark .sched-input { background: #3A3A3C; border-color: #48484A; color: white; }
-.dark .conn-badge { background: #2C2C2E; border-color: #3A3A3C; }
-
-/* Toggle animation compatibility */
+/* Toggle compatibility: remove animated thumb movement — keep structural styles only */
 .toggle-wrap input { position: absolute; width: 0; height: 0; }
 .toggle-wrap input:checked + .toggle-track {
     background: #34D399;
 }
 .toggle-wrap input:checked + .toggle-track .toggle-thumb {
+    /* keep transform but no transition */
     transform: translateX(100%);
 }
 
-/* Focus states */
-input:focus-visible {
-    outline: 2px solid #34D399;
-    outline-offset: 2px;
-}
-
-/* Button press effect */
-button:active { transform: scale(0.95); }
-
-/* Pulse dot animation */
-.pulse-dot {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
-
-/* Toast animations */
-.toast-enter {
-    animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.toast-exit {
-    animation: toastOut 0.3s ease forwards;
-}
-
-@keyframes toastIn {
-    from { opacity: 0; transform: translateY(30px) scale(0.8); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes toastOut {
-    from { opacity: 1; transform: translateY(0) scale(1); }
-    to { opacity: 0; transform: translateY(30px) scale(0.8); }
-}
-
-/* Responsive adjustments */
-@media (max-width: 390px) {
-    .relay-grid { gap: 10px; padding: 0 16px; }
-    .tesla-card { padding: 16px; }
-}
-
-@media (max-width: 320px) {
-    .relay-grid { grid-template-columns: 1fr; }
-}
-
-/* Smooth color scheme transition */
-html {
-    transition: background-color 0.3s ease, color 0.3s ease;
-    color-scheme: dark;
-}
-
-/* Splash Screen */
-#splash-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #1C1C1E;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    transition: opacity 0.5s ease, visibility 0.5s;
-}
-
-#splash-screen.fade-out {
-    opacity: 0;
-    visibility: hidden;
-}
-
-#splash-logo {
-    width: 150px;
-    height: 150px;
-    margin-bottom: 24px;
-    border-radius: 30px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    animation: splashPulse 2s infinite ease-in-out;
-}
-
-.splash-loader {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(52, 211, 153, 0.1);
-    border-top: 3px solid #34D399;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes splashPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* UI Branding Enhancements */
-.brand-logo-small {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    object-fit: cover;
-}
-
-.brand-logo-medium {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    object-fit: cover;
-    margin-bottom: 12px;
-}
+/* Removed keyframes, animations and transitions for static UI */
