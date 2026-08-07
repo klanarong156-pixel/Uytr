@@ -1,326 +1,84 @@
-/* ==================== PREMIUM GLASSMORPHISM STYLES ==================== */
-
-:root {
-    --glass-blur: 20px;
-    --glow-color: #34D399;
-    --transition-smooth: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* Premium enhancements: Glass UI, animated chips, gradient borders, premium toggles
+   Optimized for GPU compositing (transform/opacity only), respects prefers-reduced-motion
+*/
+:root{
+  --glass-bg: rgba(28,28,30,0.5);
+  --glass-border: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(56,189,248,0.06));
+  --accent: #34D399;
+  --accent-2: #059669;
+  --card-radius: 20px;
+  --soft-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  --transition: 280ms cubic-bezier(.22,1,.36,1);
 }
 
-/* Glassmorphism Card Base */
-.glass-card {
-    background: rgba(44, 44, 46, 0.4);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid rgba(52, 211, 153, 0.2);
-    border-radius: 24px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-    transition: var(--transition-smooth);
+/* Promote cards to their own layer to avoid repaint thrash */
+.tesla-card, .relay-card, .glass-card{
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
-.glass-card:hover {
-    background: rgba(44, 44, 46, 0.5);
-    border-color: rgba(52, 211, 153, 0.4);
-    box-shadow: 0 12px 48px rgba(52, 211, 153, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+/* Frosted glass base */
+.glass-card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border-radius: var(--card-radius);
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: var(--soft-shadow);
+  transition: transform var(--transition), box-shadow var(--transition);
 }
 
-.glass-card.active {
-    background: rgba(52, 211, 153, 0.1);
-    border-color: rgba(52, 211, 153, 0.5);
-    box-shadow: 0 0 30px rgba(52, 211, 153, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+/* Gradient border accent */
+.glass-border{
+  position: relative;
+  border-radius: calc(var(--card-radius) + 4px);
+  padding: 1px;
+  background: var(--glass-border);
 }
 
-/* Glow Effects */
-.glow-emerald {
-    text-shadow: 0 0 20px rgba(52, 211, 153, 0.5), 0 0 40px rgba(52, 211, 153, 0.3);
+/* Animated status chips */
+.status-chip{
+  display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-weight:700;font-size:11px;color:#fff;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);transition:all var(--transition);will-change:transform,opacity;
 }
 
-.glow-box {
-    box-shadow: 0 0 30px rgba(52, 211, 153, 0.3), 0 0 60px rgba(52, 211, 153, 0.15);
+.status-chip .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 8px rgba(0,0,0,0.4);}
+.status-chip.mqtt-online{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#081014}
+.status-chip.mqtt-online .dot{background:#004d2e;box-shadow:0 0 12px rgba(52,211,153,0.35)}
+.status-chip.mqtt-offline{background:rgba(255,255,255,0.03);color:#8E8E93;border:1px solid rgba(255,255,255,0.03)}
+
+/* Animated pulsing dot for online indicator */
+.pulse-dot{
+  position:relative;
+}
+.pulse-dot::after{
+  content:'';position:absolute;inset:0;border-radius:999px;opacity:0;transform:scale(1);background:currentColor;transition:opacity .2s ease;
+}
+.pulse-anim{animation:pulse 1600ms infinite cubic-bezier(.2,.8,.2,1);}
+@keyframes pulse{0%{transform:scale(.95);opacity:.9}50%{transform:scale(1.15);opacity:.55}100%{transform:scale(.95);opacity:.9}}
+
+/* Premium toggle (modern, iOS-like but GPU-accelerated) */
+.premium-toggle{position:relative;width:56px;height:32px;border-radius:32px;background:rgba(0,0,0,0.25);display:inline-block;transition:background var(--transition);border:1px solid rgba(255,255,255,0.04)}
+.premium-toggle .thumb{position:absolute;top:50%;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;transform:translateY(-50%);transition:transform var(--transition), box-shadow var(--transition);box-shadow:0 6px 18px rgba(0,0,0,0.45)}
+.premium-toggle.checked{background:linear-gradient(90deg,var(--accent),var(--accent-2));}
+.premium-toggle.checked .thumb{transform:translateY(-50%) translateX(24px);box-shadow:0 8px 22px rgba(52,211,153,0.25)}
+
+/* Ripple effect for touch feedback */
+.ripple-effect{position:absolute;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none;transform:scale(0);opacity:0.8;will-change:transform,opacity;animation:ripple 700ms cubic-bezier(.22,1,.36,1) forwards}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+
+/* Pump specific glow helpers (non-invasive) */
+.glow-emerald{box-shadow:0 0 30px rgba(52,211,153,0.18), inset 0 1px 1px rgba(255,255,255,0.04)}
+.pulse-glow{animation: pulse-glow 2200ms infinite ease-in-out}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(52,211,153,0.2)}50%{box-shadow:0 0 36px rgba(52,211,153,0.34)}}
+
+/* Pump ripple (created by animation.js) */
+.pump-ripple{position:absolute;width:80px;height:80px;border-radius:50%;border:2px solid rgba(52,211,153,0.25);left:0;top:0;transform:translate(-50%,-50%) scale(0.1);opacity:0.9;animation:pumpRipple 1000ms ease-out forwards;pointer-events:none}
+@keyframes pumpRipple{to{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .pulse-anim, .pulse-glow, .ripple-effect, .pump-ripple, .premium-toggle .thumb{animation:none;transition:none}
 }
 
-/* Sidebar removed */
-
-/* Login Overlay */
-.login-overlay {
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(28, 28, 30, 0.95) 0%, rgba(28, 28, 30, 0.98) 100%);
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 0.5s, visibility 0.5s;
-}
-
-.login-overlay.hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-}
-
-.login-container {
-    width: 100%;
-    max-width: 420px;
-    padding: 40px;
-    background: rgba(44, 44, 46, 0.4);
-    backdrop-filter: blur(30px);
-    border: 1px solid rgba(52, 211, 153, 0.2);
-    border-radius: 32px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-    animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.login-header {
-    text-align: center;
-    margin-bottom: 32px;
-}
-
-.login-logo {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 20px;
-    border-radius: 24px;
-    box-shadow: 0 0 40px rgba(52, 211, 153, 0.3);
-}
-
-.login-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #FFFFFF;
-    margin-bottom: 8px;
-    letter-spacing: -0.5px;
-}
-
-.login-subtitle {
-    font-size: 14px;
-    color: #8E8E93;
-}
-
-.login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.login-input {
-    width: 100%;
-    padding: 14px 16px;
-    background: rgba(58, 58, 60, 0.4);
-    border: 1px solid rgba(52, 211, 153, 0.2);
-    border-radius: 12px;
-    color: #FFFFFF;
-    font-size: 14px;
-    transition: var(--transition-smooth);
-    backdrop-filter: blur(10px);
-}
-
-.login-input:focus {
-    outline: none;
-    background: rgba(58, 58, 60, 0.6);
-    border-color: rgba(52, 211, 153, 0.5);
-    box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
-}
-
-.login-input::placeholder {
-    color: #8E8E93;
-}
-
-.login-button {
-    padding: 14px 24px;
-    background: linear-gradient(135deg, #34D399 0%, #059669 100%);
-    border: none;
-    border-radius: 12px;
-    color: #1C1C1E;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition-smooth);
-    box-shadow: 0 8px 20px rgba(52, 211, 153, 0.3);
-    margin-top: 8px;
-}
-
-.login-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(52, 211, 153, 0.4);
-}
-
-.login-button:active {
-    transform: translateY(0);
-}
-
-/* PWA Install Prompt */
-.pwa-install-prompt {
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    background: rgba(44, 44, 46, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(52, 211, 153, 0.3);
-    border-radius: 16px;
-    padding: 16px;
-    max-width: 280px;
-    box-shadow: 0 12px 40px rgba(52, 211, 153, 0.2);
-    animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 100;
-}
-
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.pwa-prompt-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #FFFFFF;
-    margin-bottom: 8px;
-}
-
-.pwa-prompt-text {
-    font-size: 12px;
-    color: #8E8E93;
-    line-height: 1.4;
-    margin-bottom: 12px;
-}
-
-.pwa-prompt-buttons {
-    display: flex;
-    gap: 8px;
-}
-
-.pwa-prompt-btn {
-    flex: 1;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition-smooth);
-}
-
-.pwa-prompt-btn.install {
-    background: #34D399;
-    color: #1C1C1E;
-}
-
-.pwa-prompt-btn.install:hover {
-    box-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
-}
-
-.pwa-prompt-btn.cancel {
-    background: rgba(255, 255, 255, 0.1);
-    color: #8E8E93;
-}
-
-.pwa-prompt-btn.cancel:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-/* Enhanced Tesla Cards */
-.tesla-card {
-    background: rgba(44, 44, 46, 0.3);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(52, 211, 153, 0.15);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-}
-
-.tesla-card:hover {
-    background: rgba(44, 44, 46, 0.4);
-    border-color: rgba(52, 211, 153, 0.3);
-    box-shadow: 0 12px 36px rgba(52, 211, 153, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-.tesla-card.active {
-    background: rgba(52, 211, 153, 0.08);
-    border-color: rgba(52, 211, 153, 0.4);
-    box-shadow: 0 0 30px rgba(52, 211, 153, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-/* Relay Card Enhancement */
-.relay-card {
-    background: rgba(44, 44, 46, 0.3);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(52, 211, 153, 0.15);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-    transition: var(--transition-smooth);
-}
-
-.relay-card:hover {
-    background: rgba(44, 44, 46, 0.4);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-.relay-card.active {
-    background: rgba(52, 211, 153, 0.1);
-    border-color: #34D399;
-    box-shadow: 0 0 30px rgba(52, 211, 153, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-}
-
-/* Micro-interactions */
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-}
-
-.float-animation {
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.3); }
-    50% { box-shadow: 0 0 40px rgba(52, 211, 153, 0.6); }
-}
-
-.pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Responsive Adjustments */
-@media (min-width: 1024px) {
-    .page-section {
-        padding-bottom: 40px !important;
-    }
-}
-
-@media (max-width: 768px) {
-    .login-container {
-        max-width: 90%;
-        padding: 32px 24px;
-    }
-
-    .pwa-install-prompt {
-        max-width: calc(100% - 40px);
-        right: 20px;
-        left: 20px;
-    }
-}
-
-/* Splash Screen Animations */
-@keyframes splashPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
-}
-
-#splash-logo {
-    animation: splashPulse 2s infinite ease-in-out;
-}
+/* Performance: avoid expensive selectors */
+/* End of premium enhancements */
